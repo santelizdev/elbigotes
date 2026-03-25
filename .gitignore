@@ -31,9 +31,6 @@ media/
 staticfiles/
 local_settings.py
 
-# Docker / Compose (si no quieres versionar las configs locales)
-compose/
-
 # Data y ejemplos locales
 data/
 src/celerybeat-schedule*
@@ -50,4 +47,4 @@ src/celerybeat-schedule*
 .DS_Store
 Thumbs.db
 .dockerignore
-Dockerfile*
+!frontend/.dockerignore

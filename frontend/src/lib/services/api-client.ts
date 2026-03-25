@@ -17,7 +17,9 @@ export class ApiRequestError extends Error {
 }
 
 function buildUrl(path: string, query?: RequestOptions["query"]) {
-  const url = new URL(`${siteConfig.apiBaseUrl}${path}`);
+  const baseUrl =
+    typeof window === "undefined" ? siteConfig.internalApiBaseUrl : siteConfig.apiBaseUrl;
+  const url = new URL(`${baseUrl}${path}`, siteConfig.siteUrl);
   if (query) {
     Object.entries(query).forEach(([key, value]) => {
       if (value === undefined || value === "" || value === false) {
