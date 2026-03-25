@@ -47,8 +47,9 @@ function MapViewportController({
       : null;
 
     if (focusedPoint) {
+      map.stop();
       map.setView([focusedPoint.latitude, focusedPoint.longitude], 15, {
-        animate: true,
+        animate: false,
       });
       return;
     }
@@ -56,19 +57,23 @@ function MapViewportController({
     // El mapa se reajusta desde los datos visibles para que móvil y desktop compartan la misma lógica.
     const bounds = getMapBounds(points);
     if (!bounds) {
+      map.stop();
       map.setView(
         [siteConfig.defaultCenter.lat, siteConfig.defaultCenter.lng],
         siteConfig.defaultZoom,
+        { animate: false },
       );
       return;
     }
 
     if (points.length === 1) {
-      map.setView([points[0].latitude, points[0].longitude], 13, { animate: true });
+      map.stop();
+      map.setView([points[0].latitude, points[0].longitude], 13, { animate: false });
       return;
     }
 
-    map.fitBounds(bounds, { padding: [48, 48] });
+    map.stop();
+    map.fitBounds(bounds, { padding: [48, 48], animate: false });
   }, [focusedPointId, map, points]);
 
   return null;
@@ -82,12 +87,18 @@ export default function LeafletMapRuntime({
   const safePoints = points.filter(
     (point) => Number.isFinite(point.latitude) && Number.isFinite(point.longitude),
   );
+  const mapSignature =
+    safePoints.map((point) => `${point.id}:${point.latitude}:${point.longitude}`).join("|") || "empty";
 
   return (
     <MapContainer
+      key={mapSignature}
       center={[siteConfig.defaultCenter.lat, siteConfig.defaultCenter.lng]}
       zoom={siteConfig.defaultZoom}
       scrollWheelZoom
+      zoomAnimation={false}
+      fadeAnimation={false}
+      markerZoomAnimation={false}
       className="leaflet-shell"
     >
       <TileLayer

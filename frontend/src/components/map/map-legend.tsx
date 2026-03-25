@@ -1,9 +1,9 @@
-import { CATEGORY_DEFINITIONS } from "@/lib/constants/categories";
+import { CategoryDefinition } from "@/lib/constants/categories";
 
-export function MapLegend() {
+export function MapLegend({ categories }: { categories: CategoryDefinition[] }) {
   return (
     <div className="map-legend">
-      {CATEGORY_DEFINITIONS.filter((category) => category.kind === "place").map((category) => (
+      {categories.filter((category) => category.kind === "place").map((category) => (
         <span key={category.slug} className="map-legend__item">
           <span className="map-legend__dot" style={{ background: category.accent }} />
           {category.shortLabel}
@@ -12,4 +12,3 @@ export function MapLegend() {
     </div>
   );
 }
-

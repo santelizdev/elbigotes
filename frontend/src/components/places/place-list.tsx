@@ -17,7 +17,23 @@ export function PlaceList({
   onSelectPlace,
 }: PlaceListProps) {
   if (loading) {
-    return <LoadingPanel message="Actualizando resultados sobre el mapa..." />;
+    return (
+      <div className="stack-lg" aria-hidden="true">
+        <LoadingPanel message="Actualizando resultados sobre el mapa..." />
+        {Array.from({ length: 3 }, (_, index) => (
+          <article key={index} className="skeleton-card">
+            <div className="skeleton-card__line skeleton-card__line--eyebrow" />
+            <div className="skeleton-card__line skeleton-card__line--title" />
+            <div className="skeleton-card__line skeleton-card__line--body" />
+            <div className="skeleton-card__line skeleton-card__line--body" />
+            <div className="skeleton-card__chips">
+              <span className="skeleton-card__chip" />
+              <span className="skeleton-card__chip" />
+            </div>
+          </article>
+        ))}
+      </div>
+    );
   }
 
   if (!places.length) {
@@ -42,4 +58,3 @@ export function PlaceList({
     </div>
   );
 }
-

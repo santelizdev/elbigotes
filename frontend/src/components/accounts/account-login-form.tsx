@@ -36,7 +36,13 @@ export function AccountLoginForm() {
         return;
       }
 
-      setError("Esta primera versión del área cliente está habilitada solo para cuentas comerciales.");
+      if (response.user.role === "pet_owner") {
+        router.push("/mi-cuenta");
+        router.refresh();
+        return;
+      }
+
+      setError("Esta cuenta todavía no tiene un panel habilitado en esta versión.");
     } catch (error) {
       setError(
         getApiErrorMessage(
@@ -53,10 +59,10 @@ export function AccountLoginForm() {
     <div className={styles.page}>
       <section className={styles.hero}>
         <p className="eyebrow">Acceso cliente</p>
-        <h1 className="page-title">Ingresar al área comercial</h1>
+        <h1 className="page-title">Ingresar al área cliente</h1>
         <p className="page-lead">
-          Desde aquí podrás revisar el estado de publicación, editar tus datos y sumar nuevas
-          sucursales sin mezclarlo con el registro público inicial.
+          Desde aquí podrás entrar al panel comercial o al espacio personal de tutores, según el
+          rol asociado a tu cuenta.
         </p>
       </section>
 

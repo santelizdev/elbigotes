@@ -38,11 +38,21 @@ class PlaceAdmin(GISModelAdmin):
     prepopulated_fields = {"slug": ("name",)}
     inlines = [ContactPointInline]
     readonly_fields = ("created_at", "updated_at")
-    actions = ("mark_as_active", "mark_as_verified", "queue_geocoding", "queue_quality_audit")
+    actions = (
+        "mark_as_active",
+        "mark_as_archived",
+        "mark_as_verified",
+        "queue_geocoding",
+        "queue_quality_audit",
+    )
 
     @admin.action(description="Marcar seleccionados como activos")
     def mark_as_active(self, request, queryset):
         queryset.update(status="active")
+
+    @admin.action(description="Archivar seleccionados")
+    def mark_as_archived(self, request, queryset):
+        queryset.update(status="archived")
 
     @admin.action(description="Marcar seleccionados como verificados")
     def mark_as_verified(self, request, queryset):

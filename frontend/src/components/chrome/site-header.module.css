@@ -47,6 +47,7 @@
   font-family: var(--font-display);
   font-size: 1.1rem;
   font-weight: 700;
+  transform: translateY(0.2rem);
 }
 
 .brandBlock {
@@ -69,6 +70,7 @@
   display: flex;
   align-items: center;
   gap: 0.55rem;
+  flex: 0 0 auto;
 }
 
 .menuButton {
@@ -95,7 +97,8 @@
 }
 
 .desktopNav {
-  padding: 0 0 0.9rem;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .desktopNavInner {
@@ -103,7 +106,14 @@
   align-items: center;
   justify-content: flex-end;
   gap: 0.5rem;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  white-space: nowrap;
+}
+
+.desktopNavInner::-webkit-scrollbar {
+  display: none;
 }
 
 .navLink,

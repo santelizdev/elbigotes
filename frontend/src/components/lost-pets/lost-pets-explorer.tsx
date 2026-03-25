@@ -38,7 +38,7 @@ export function LostPetsExplorer({ reports }: { reports: LostPetReport[] }) {
           </div>
 
           <Button href="/publicar-mascota-perdida" variant="primary">
-            Publicar reporte
+            Publicar 📢
           </Button>
         </div>
       </section>

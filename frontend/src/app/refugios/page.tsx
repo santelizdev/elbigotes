@@ -3,6 +3,7 @@ import { Metadata } from "next";
 import { MapExplorerPage } from "@/components/explorer/map-explorer-page";
 import { ErrorState } from "@/components/shared/error-state";
 import { loadPlacesPageData } from "@/lib/services/server-loaders";
+import { getPublicCategories } from "@/lib/services/taxonomy-service";
 
 export const metadata: Metadata = {
   title: "Refugios y albergues en Chile | Elbigotes",
@@ -10,6 +11,7 @@ export const metadata: Metadata = {
 };
 
 export default async function RefugiosPage() {
+  const categories = await getPublicCategories();
   const { places, hasError } = await loadPlacesPageData({
     category: "refugios-albergues",
   });
@@ -24,6 +26,7 @@ export default async function RefugiosPage() {
         description="Ubica organizaciones de rescate y espacios de tránsito sobre mapa, con información lista para tomar contacto."
         initialPlaces={places}
         initialCategory="refugios-albergues"
+        categories={categories}
       />
     </>
   );

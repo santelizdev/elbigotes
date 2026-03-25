@@ -131,3 +131,32 @@ def test_import_pet_places_from_csv_skips_reasonable_duplicate_without_update(tm
     assert summary.processed == 1
     assert summary.ignored == 1
     assert ImportedPlaceRecord.objects.filter(status="skipped").exists()
+
+
+@pytest.mark.django_db
+def test_import_pet_places_from_csv_builds_public_address_from_commune_region_and_country(tmp_path):
+    Category.objects.create(name="Guarderías", slug="guarderias")
+
+    csv_path = tmp_path / "address-fallback.csv"
+    csv_path.write_text(
+        "\n".join(
+            [
+                (
+                    "country,region,commune,category,name,address,latitude,longitude,phone,"
+                    "email,website,source,notes"
+                ),
+                (
+                    "Chile,Región Metropolitana,Providencia,guarderias,Guarderia Barrio Alto,"
+                    ",,,,,https://guarderia.cl,manual_seed,Sin dirección exacta"
+                ),
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    summary = import_pet_places_from_csv(str(csv_path))
+
+    assert summary.created == 1
+    place = Place.objects.get(name="Guarderia Barrio Alto")
+    assert place.formatted_address == "Providencia, Región Metropolitana, Chile"

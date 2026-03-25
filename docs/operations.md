@@ -75,6 +75,20 @@ python src/manage.py validate_place_duplicates
 
 El detector usa nombre similar, comuna compartida y cercanía geográfica como señales iniciales.
 
+### 6. Validar catálogo público antes de subir
+
+```bash
+python src/manage.py validate_public_catalog --fail-on-warning
+```
+
+Este comando revisa:
+
+- taxonomía pública mínima cargada;
+- lugares activos por categoría;
+- registros importados fallidos o pendientes;
+- datasets activos sin registros;
+- lugares activos sin dirección pública o sin fuente.
+
 ## CSV esperado
 
 Archivo de ejemplo: [places_import_sample.csv](/Users/delorean/elbigotes/data/examples/places_import_sample.csv)
@@ -118,4 +132,3 @@ Columnas soportadas:
 - `ClaimRequest` ya resuelve el flujo base para reclamar una ficha.
 - `Place.is_featured` puede sostener destacados sin rediseñar el modelo.
 - `Source`, datasets e import records permiten distinguir datos propios, partners y capturas externas.
-

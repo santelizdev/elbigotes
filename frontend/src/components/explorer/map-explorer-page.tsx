@@ -11,7 +11,7 @@ import { PlaceDetailSheet } from "@/components/places/place-detail-sheet";
 import { PlaceList } from "@/components/places/place-list";
 import { ErrorState } from "@/components/shared/error-state";
 import { Button } from "@/components/ui/button";
-import { CATEGORY_DEFINITIONS } from "@/lib/constants/categories";
+import { CATEGORY_DEFINITIONS, CategoryDefinition } from "@/lib/constants/categories";
 import { Place } from "@/lib/types";
 import { usePlacesQuery } from "@/hooks/use-places-query";
 
@@ -20,6 +20,7 @@ interface MapExplorerPageProps {
   description: string;
   initialPlaces: Place[];
   initialCategory?: string;
+  categories?: CategoryDefinition[];
   lostPetsCount?: number;
 }
 
@@ -28,6 +29,7 @@ export function MapExplorerPage({
   description,
   initialPlaces,
   initialCategory,
+  categories = CATEGORY_DEFINITIONS,
   lostPetsCount = 0,
 }: MapExplorerPageProps) {
   // La UX prioriza un patrón estable: filtros arriba, resultados a la izquierda y mapa dominante.
@@ -35,12 +37,20 @@ export function MapExplorerPage({
     places,
     selectedCategory,
     search,
+    selectedCommune,
+    radiusKm,
+    hasUserLocation,
+    locating,
     loading,
     error,
+    locationMessage,
     showOnlyVerified,
     setSearch,
+    setSelectedCommune,
+    setRadiusKm,
     setShowOnlyVerified,
     updateCategory,
+    toggleUserLocation,
   } = usePlacesQuery({
     initialPlaces,
     initialCategory,
@@ -60,7 +70,7 @@ export function MapExplorerPage({
   const points = places
     .filter((place) => place.latitude !== null && place.longitude !== null)
     .map((place) => {
-      const category = CATEGORY_DEFINITIONS.find((entry) => entry.apiCategory === place.category);
+      const category = categories.find((entry) => entry.apiCategory === place.category);
       return {
         id: place.slug,
         latitude: place.latitude as number,
@@ -84,7 +94,7 @@ export function MapExplorerPage({
 
           <div className="stack-md">
             <Button href="/mascotas-perdidas" variant="secondary">
-              Ver reportes activos
+              Ver Publicaciones Activas
             </Button>
             <Button href="/publicar-mascota-perdida" variant="primary">
               Publicar una mascota perdida
@@ -108,12 +118,24 @@ export function MapExplorerPage({
         </div>
       </section>
 
-      <CategoryFilterBar selectedCategory={selectedCategory} onSelect={updateCategory} />
+      <CategoryFilterBar
+        categories={categories}
+        selectedCategory={selectedCategory}
+        onSelect={updateCategory}
+      />
 
       <ExplorerToolbar
         search={search}
+        commune={selectedCommune}
+        radiusKm={radiusKm}
+        hasUserLocation={hasUserLocation}
+        locating={locating}
+        locationMessage={locationMessage}
         showOnlyVerified={showOnlyVerified}
         onSearchChange={setSearch}
+        onCommuneChange={setSelectedCommune}
+        onRadiusChange={setRadiusKm}
+        onLocationToggle={toggleUserLocation}
         onVerifiedChange={setShowOnlyVerified}
       />
 
@@ -149,7 +171,7 @@ export function MapExplorerPage({
               <strong>Mapa activo</strong>
               <span className={styles.mapHint}>Explora puntos verificados por categoría</span>
             </div>
-            <MapLegend />
+            <MapLegend categories={categories} />
           </div>
           {points.length ? (
             <LeafletMap

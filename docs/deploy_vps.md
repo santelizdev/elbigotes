@@ -33,6 +33,10 @@ Variables mínimas para producción:
 - `DJANGO_DEBUG=False`
 - `DJANGO_ALLOWED_HOSTS=tu-dominio.com,www.tu-dominio.com`
 - `DJANGO_CSRF_TRUSTED_ORIGINS=https://tu-dominio.com,https://www.tu-dominio.com`
+- `CORS_ALLOWED_ORIGINS=https://tu-frontend.com,https://www.tu-dominio.com`
+- `CORS_ALLOWED_ORIGIN_REGEXES=`
+- `CORS_ALLOW_ALL_ORIGINS=False`
+- `CORS_ALLOW_CREDENTIALS=False`
 - `POSTGRES_DB`
 - `POSTGRES_USER`
 - `POSTGRES_PASSWORD`
@@ -43,6 +47,8 @@ Variables mínimas para producción:
 - `CELERY_RESULT_BACKEND`
 - `GEOCODING_PROVIDER`
 - `GEOCODING_USER_AGENT`
+- `API_THROTTLE_ANON=120/hour`
+- `API_THROTTLE_USER=600/hour`
 
 ## 4. Construir y levantar
 
@@ -57,6 +63,7 @@ Luego crear superusuario y cargar seeds o CSV reales:
 docker compose run --rm web python src/manage.py createsuperuser
 docker compose run --rm web python src/manage.py seed_platform
 docker compose run --rm web python src/manage.py import_places_csv data/examples/places_import_sample.csv --source seed-manual --dataset-slug inicio
+docker compose run --rm web python src/manage.py validate_public_catalog --fail-on-warning
 ```
 
 ## 5. Configurar Nginx
@@ -99,4 +106,3 @@ sudo certbot --nginx -d tu-dominio.com -d www.tu-dominio.com
 - cache: Redis como cache de listados y búsquedas geográficas frecuentes;
 - separación de servicios: frontend Next.js, backend Django, workers Celery y PostGIS en contenedores separados;
 - búsqueda futura: considerar OpenSearch o PostgreSQL full-text avanzado cuando el volumen crezca.
-

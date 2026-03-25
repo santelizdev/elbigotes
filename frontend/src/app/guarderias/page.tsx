@@ -3,6 +3,7 @@ import { Metadata } from "next";
 import { MapExplorerPage } from "@/components/explorer/map-explorer-page";
 import { ErrorState } from "@/components/shared/error-state";
 import { loadPlacesPageData } from "@/lib/services/server-loaders";
+import { getPublicCategories } from "@/lib/services/taxonomy-service";
 
 export const metadata: Metadata = {
   title: "Guarderías para mascotas en Chile | Elbigotes",
@@ -10,6 +11,7 @@ export const metadata: Metadata = {
 };
 
 export default async function GuarderiasPage() {
+  const categories = await getPublicCategories();
   const { places, hasError } = await loadPlacesPageData({
     category: "guarderias",
   });
@@ -24,6 +26,7 @@ export default async function GuarderiasPage() {
         description="Selecciona opciones de cuidado diario o estadía con un mapa preparado para comparar cobertura, contacto y contexto local."
         initialPlaces={places}
         initialCategory="guarderias"
+        categories={categories}
       />
     </>
   );

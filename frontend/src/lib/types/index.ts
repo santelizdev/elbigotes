@@ -1,10 +1,4 @@
-export type CategorySlug =
-  | "veterinarias"
-  | "refugios-albergues"
-  | "parques-pet-friendly"
-  | "emergencias-veterinarias"
-  | "guarderias"
-  | "mascotas-perdidas";
+export type CategorySlug = string;
 
 export interface ContactPoint {
   label: string;
@@ -61,6 +55,7 @@ export interface LostPetReport {
 export interface PlaceFilters {
   category?: string;
   search?: string;
+  commune?: string;
   lat?: number;
   lng?: number;
   radiusKm?: number;
@@ -68,4 +63,3 @@ export interface PlaceFilters {
   isOpen247?: boolean;
   isEmergencyService?: boolean;
 }
-

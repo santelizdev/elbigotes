@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.api.authentication import SignedTokenAuthentication
-from apps.accounts.api.permissions import IsBusinessOwner
+from apps.accounts.api.permissions import IsBusinessOwner, IsPetOwner
 from apps.accounts.api.serializers import (
     BusinessBranchCreateSerializer,
     BusinessRegistrationSerializer,
@@ -11,6 +11,7 @@ from apps.accounts.api.serializers import (
     BusinessWorkspaceUpdateSerializer,
     LoginSerializer,
     PetOwnerRegistrationSerializer,
+    PetOwnerWorkspaceSerializer,
     RegistrationCatalogSerializer,
     build_registration_catalog,
 )
@@ -58,6 +59,19 @@ class BusinessWorkspaceView(APIView):
         serializer.is_valid(raise_exception=True)
         payload = serializer.save()
         return Response(BusinessWorkspaceSerializer(payload).data)
+
+
+class PetOwnerWorkspaceView(APIView):
+    authentication_classes = [SignedTokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated, IsPetOwner]
+
+    def get(self, request, *args, **kwargs):
+        profile = request.user.pet_owner_profile
+        serializer = PetOwnerWorkspaceSerializer(
+            {"user": request.user, "profile": profile},
+            context={"request": request},
+        )
+        return Response(serializer.data)
 
 
 class BusinessBranchCreateView(generics.CreateAPIView):

@@ -3,6 +3,7 @@ import { Metadata } from "next";
 import { MapExplorerPage } from "@/components/explorer/map-explorer-page";
 import { ErrorState } from "@/components/shared/error-state";
 import { loadPlacesPageData } from "@/lib/services/server-loaders";
+import { getPublicCategories } from "@/lib/services/taxonomy-service";
 
 export const metadata: Metadata = {
   title: "Veterinarias en Chile | Elbigotes",
@@ -10,6 +11,7 @@ export const metadata: Metadata = {
 };
 
 export default async function VeterinariasPage() {
+  const categories = await getPublicCategories();
   const { places, hasError } = await loadPlacesPageData({
     category: "veterinarias",
   });
@@ -24,6 +26,7 @@ export default async function VeterinariasPage() {
         description="Consulta clínicas y centros veterinarios con foco en confianza operativa, cercanía y lectura rápida desde mapa."
         initialPlaces={places}
         initialCategory="veterinarias"
+        categories={categories}
       />
     </>
   );

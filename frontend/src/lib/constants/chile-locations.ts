@@ -70,3 +70,9 @@ export const DEFAULT_REGION = "Región Metropolitana";
 export function getCommunesForRegion(region: string) {
   return CHILE_REGIONS.find((item) => item.region === region)?.communes ?? [];
 }
+
+export function getAllCommunes() {
+  return [...new Set(CHILE_REGIONS.flatMap((item) => item.communes))].sort((left, right) =>
+    left.localeCompare(right, "es"),
+  );
+}

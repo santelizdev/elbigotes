@@ -1,4 +1,8 @@
+from datetime import timedelta
+
 import pytest
+from django.core.exceptions import ValidationError
+from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.accounts.models import (
@@ -11,6 +15,14 @@ from apps.accounts.models import (
     UserRole,
 )
 from apps.accounts.tokens import create_access_token
+from apps.lost_pets.models import LostPetReport
+from apps.memberships.models import (
+    MembershipAssignment,
+    MembershipAssignmentStatus,
+    MembershipAudience,
+    MembershipBillingInterval,
+    MembershipPlan,
+)
 from apps.taxonomy.models import Category
 
 
@@ -169,3 +181,131 @@ def test_business_login_workspace_update_and_branch_creation():
 
     profile = BusinessProfile.objects.get(user__email="owner@example.com")
     assert profile.owned_places.count() == 2
+
+
+@pytest.mark.django_db
+def test_business_workspace_requires_authenticated_business_owner():
+    client = APIClient()
+
+    unauthenticated_response = client.get("/api/v1/accounts/me/business/")
+    assert unauthenticated_response.status_code == 403
+
+    user = User.objects.create_user(
+        email="pet-owner@example.com",
+        password="Password123!",
+        role=UserRole.PET_OWNER,
+    )
+    token = create_access_token(user)
+
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+    forbidden_response = client.get("/api/v1/accounts/me/business/")
+
+    assert forbidden_response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_pet_owner_workspace_returns_pets_reports_and_memberships():
+    client = APIClient()
+    user = User.objects.create_user(
+        email="pet-owner@example.com",
+        password="Password123!",
+        first_name="Camila",
+        role=UserRole.PET_OWNER,
+    )
+    profile = PetOwnerProfile.objects.create(
+        user=user,
+        phone="+56999990000",
+        commune="Ñuñoa",
+        region="Región Metropolitana",
+        marketing_opt_in=True,
+    )
+    pet = PetProfile.objects.create(owner=profile, name="Luna", species="dog", sex="female")
+    plan = MembershipPlan.objects.create(
+        name="Tutor Plus",
+        audience=MembershipAudience.PET_OWNER,
+        billing_interval=MembershipBillingInterval.MONTHLY,
+        price_amount=4990,
+    )
+    MembershipAssignment.objects.create(
+        plan=plan,
+        owner=profile,
+        status=MembershipAssignmentStatus.ACTIVE,
+        starts_at=timezone.now(),
+        renews_at=timezone.now() + timedelta(days=30),
+    )
+    report = LostPetReport.objects.create(
+        pet_name="Luna",
+        species="dog",
+        sex="female",
+        color_description="Blanca",
+        status="lost",
+        last_seen_at="2026-03-20T12:30:00Z",
+        last_seen_address="Diagonal 123, Ñuñoa",
+        reporter_name="Camila",
+        reporter_phone="+56999990000",
+        reporter_email="pet-owner@example.com",
+        moderation_status="approved",
+        metadata={"pet_owner_profile_id": profile.id, "pet_profile_id": pet.id},
+    )
+
+    token = create_access_token(user)
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+
+    response = client.get("/api/v1/accounts/me/pet-owner/")
+
+    assert response.status_code == 200
+    assert response.data["profile"]["phone"] == "+56999990000"
+    assert len(response.data["profile"]["pets"]) == 1
+    assert response.data["profile"]["pets"][0]["name"] == "Luna"
+    assert len(response.data["profile"]["memberships"]) == 1
+    assert response.data["profile"]["memberships"][0]["plan_slug"] == "tutor-plus"
+    assert len(response.data["reports"]) == 1
+    assert response.data["reports"][0]["id"] == str(report.id)
+
+
+@pytest.mark.django_db
+def test_membership_assignment_rejects_wrong_owner_type_for_plan():
+    business_user = User.objects.create_user(
+        email="biz@example.com",
+        password="Password123!",
+        role=UserRole.BUSINESS_OWNER,
+    )
+    business_profile = BusinessProfile.objects.create(
+        user=business_user,
+        business_name="Vet Sur",
+        business_kind=BusinessKind.VETERINARY,
+        phone="+56944445555",
+        commune="Providencia",
+        region="Región Metropolitana",
+    )
+    pet_owner_user = User.objects.create_user(
+        email="pet@example.com",
+        password="Password123!",
+        role=UserRole.PET_OWNER,
+    )
+    pet_owner_profile = PetOwnerProfile.objects.create(
+        user=pet_owner_user,
+        phone="+56911112222",
+    )
+    plan = MembershipPlan.objects.create(
+        name="Tutor Base",
+        audience=MembershipAudience.PET_OWNER,
+        billing_interval=MembershipBillingInterval.MONTHLY,
+    )
+
+    with pytest.raises(ValidationError):
+        MembershipAssignment.objects.create(
+            plan=plan,
+            owner=business_profile,
+            status=MembershipAssignmentStatus.TRIAL,
+            starts_at=timezone.now(),
+        )
+
+    valid_assignment = MembershipAssignment.objects.create(
+        plan=plan,
+        owner=pet_owner_profile,
+        status=MembershipAssignmentStatus.TRIAL,
+        starts_at=timezone.now(),
+    )
+
+    assert valid_assignment.owner_object_id == pet_owner_profile.id

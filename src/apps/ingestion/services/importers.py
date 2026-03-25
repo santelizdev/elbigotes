@@ -55,6 +55,10 @@ def _clean_string(value) -> str:
     return str(value or "").strip()
 
 
+def _build_formatted_address(*parts: str) -> str:
+    return ", ".join(part for part in (_clean_string(part) for part in parts) if part)
+
+
 def _row_checksum(row: dict) -> str:
     serialized = "|".join(f"{key}={value}" for key, value in sorted(row.items()))
     return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
@@ -300,11 +304,17 @@ def import_places_from_csv(
             place.status = (
                 requested_status if requested_status in valid_statuses else PlaceStatus.DRAFT
             )
-            place.street_address = (row.get("street_address") or "").strip()
-            place.formatted_address = (row.get("formatted_address") or "").strip()
             place.commune = (row.get("commune") or "").strip()
             place.region = (row.get("region") or dataset.default_region or "").strip()
             place.country = (row.get("country") or dataset.default_country or "Chile").strip()
+            place.street_address = (row.get("street_address") or "").strip()
+            raw_formatted_address = (row.get("formatted_address") or "").strip()
+            place.formatted_address = raw_formatted_address or _build_formatted_address(
+                place.street_address,
+                place.commune,
+                place.region,
+                place.country,
+            )
             place.website = (row.get("website") or "").strip()
             place.is_verified = _parse_bool(row.get("is_verified", ""))
             place.is_emergency_service = _parse_bool(row.get("is_emergency_service", ""))
@@ -499,10 +509,15 @@ def import_pet_places_from_csv(
                 place.summary = notes[:280]
                 place.description = notes
                 place.street_address = address
-                place.formatted_address = address
                 place.commune = commune
                 place.region = region
                 place.country = country
+                place.formatted_address = _build_formatted_address(
+                    address,
+                    commune,
+                    region,
+                    country,
+                )
                 place.website = website
                 place.source = source
                 place.is_verified = False

@@ -1,13 +1,15 @@
 "use client";
 
-import { CATEGORY_DEFINITIONS } from "@/lib/constants/categories";
+import { CategoryDefinition } from "@/lib/constants/categories";
 
 interface CategoryFilterBarProps {
+  categories: CategoryDefinition[];
   selectedCategory: string;
   onSelect: (value: string) => void;
 }
 
 export function CategoryFilterBar({
+  categories,
   selectedCategory,
   onSelect,
 }: CategoryFilterBarProps) {
@@ -20,7 +22,7 @@ export function CategoryFilterBar({
       >
         Todo Chile
       </button>
-      {CATEGORY_DEFINITIONS.filter((category) => category.kind === "place").map((category) => (
+      {categories.filter((category) => category.kind === "place").map((category) => (
         <button
           key={category.slug}
           className={`category-chip ${
@@ -35,4 +37,3 @@ export function CategoryFilterBar({
     </div>
   );
 }
-

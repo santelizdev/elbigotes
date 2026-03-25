@@ -7,7 +7,16 @@ import { MapPoint } from "@/components/map/types";
 
 const LeafletMapRuntime = dynamic(() => import("@/components/map/leaflet-map-runtime"), {
   ssr: false,
-  loading: () => <LoadingPanel message="Preparando mapa interactivo..." />,
+  loading: () => (
+    <div className="map-loading-shell">
+      <LoadingPanel message="Preparando mapa interactivo..." />
+      <div className="map-loading-shell__grid" aria-hidden="true">
+        <div className="map-loading-shell__pulse" />
+        <div className="map-loading-shell__pulse" />
+        <div className="map-loading-shell__pulse" />
+      </div>
+    </div>
+  ),
 });
 
 interface LeafletMapProps {

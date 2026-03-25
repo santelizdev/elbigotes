@@ -70,9 +70,32 @@ function mapPlace(payload: PlaceApiResponse): Place {
   };
 }
 
+function distanceKmBetween(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number,
+) {
+  const toRadians = (value: number) => (value * Math.PI) / 180;
+  const earthRadiusKm = 6371;
+  const deltaLat = toRadians(lat2 - lat1);
+  const deltaLng = toRadians(lng2 - lng1);
+  const a =
+    Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+    Math.cos(toRadians(lat1)) *
+      Math.cos(toRadians(lat2)) *
+      Math.sin(deltaLng / 2) *
+      Math.sin(deltaLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return earthRadiusKm * c;
+}
+
 function filterMockPlaces(filters?: PlaceFilters) {
   return mockPlaces.filter((place) => {
     if (filters?.category && place.category !== filters.category) {
+      return false;
+    }
+    if (filters?.commune && place.commune.toLowerCase() !== filters.commune.toLowerCase()) {
       return false;
     }
     if (filters?.search) {
@@ -91,6 +114,23 @@ function filterMockPlaces(filters?: PlaceFilters) {
     if (filters?.isEmergencyService && !place.isEmergencyService) {
       return false;
     }
+    if (
+      filters?.lat !== undefined &&
+      filters?.lng !== undefined &&
+      filters?.radiusKm !== undefined &&
+      place.latitude !== null &&
+      place.longitude !== null
+    ) {
+      const distance = distanceKmBetween(
+        filters.lat,
+        filters.lng,
+        place.latitude,
+        place.longitude,
+      );
+      if (distance > filters.radiusKm) {
+        return false;
+      }
+    }
     return true;
   });
 }
@@ -101,6 +141,7 @@ export async function getPlaces(filters?: PlaceFilters): Promise<Place[]> {
       query: {
         category: filters?.category,
         search: filters?.search,
+        commune: filters?.commune,
         lat: filters?.lat,
         lng: filters?.lng,
         radius_km: filters?.radiusKm,

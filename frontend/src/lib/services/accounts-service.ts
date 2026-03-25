@@ -52,6 +52,17 @@ interface UserSummary {
   role: string;
 }
 
+interface MembershipAssignmentSummary {
+  id: number;
+  plan_name: string;
+  plan_slug: string;
+  audience: string;
+  status: string;
+  starts_at: string;
+  ends_at?: string | null;
+  renews_at?: string | null;
+}
+
 export interface AccountLoginPayload {
   email: string;
   password: string;
@@ -91,6 +102,7 @@ export interface BusinessRegistrationResponse {
     grace_expires_at?: string | null;
     marketing_opt_in: boolean;
     notes?: string;
+    memberships: MembershipAssignmentSummary[];
   };
 }
 
@@ -132,6 +144,7 @@ export interface PetOwnerRegistrationResponse {
     commune: string;
     region: string;
     marketing_opt_in: boolean;
+    memberships: MembershipAssignmentSummary[];
     pets: Array<{
       id: string;
       name: string;
@@ -153,6 +166,31 @@ export interface PetOwnerRegistrationResponse {
     notes?: string;
     is_active: boolean;
   };
+}
+
+export interface PetOwnerWorkspaceResponse {
+  user: UserSummary;
+  profile: PetOwnerRegistrationResponse["profile"];
+  reports: Array<{
+    id: string;
+    pet_name: string;
+    species: string;
+    breed?: string;
+    sex: string;
+    color_description: string;
+    distinctive_marks?: string;
+    status: string;
+    last_seen_at: string;
+    last_seen_address: string;
+    last_seen_reference?: string;
+    latitude: number | null;
+    longitude: number | null;
+    photo_url?: string | null;
+    is_reward_offered: boolean;
+    reward_amount?: number | null;
+    moderation_status: string;
+    created_at: string;
+  }>;
 }
 
 export async function getRegistrationCatalog(): Promise<{
@@ -218,6 +256,13 @@ export async function loginAccount(payload: AccountLoginPayload): Promise<Accoun
 
 export async function getBusinessWorkspace(token: string): Promise<BusinessWorkspaceResponse> {
   return apiRequest("/accounts/me/business/", {
+    headers: buildAuthHeaders(token),
+    cache: "no-store",
+  });
+}
+
+export async function getPetOwnerWorkspace(token: string): Promise<PetOwnerWorkspaceResponse> {
+  return apiRequest("/accounts/me/pet-owner/", {
     headers: buildAuthHeaders(token),
     cache: "no-store",
   });

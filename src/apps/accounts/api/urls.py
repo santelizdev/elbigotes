@@ -6,6 +6,7 @@ from apps.accounts.api.views import (
     BusinessRegistrationView,
     BusinessWorkspaceView,
     PetOwnerRegistrationView,
+    PetOwnerWorkspaceView,
     RegistrationCatalogView,
 )
 
@@ -23,6 +24,7 @@ urlpatterns = [
         name="accounts-register-pet-owner",
     ),
     path("me/business/", BusinessWorkspaceView.as_view(), name="accounts-me-business"),
+    path("me/pet-owner/", PetOwnerWorkspaceView.as_view(), name="accounts-me-pet-owner"),
     path(
         "me/business/branches/",
         BusinessBranchCreateView.as_view(),

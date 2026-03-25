@@ -7,18 +7,26 @@ import { useEffect, useState } from "react";
 import styles from "@/components/chrome/site-header.module.css";
 import { ThemeToggleButton } from "@/components/chrome/theme-toggle";
 import { Button } from "@/components/ui/button";
+import { CategoryDefinition } from "@/lib/constants/categories";
 
-const navItems = [
-  { href: "/veterinarias", label: "Veterinarias" },
-  { href: "/refugios", label: "Refugios" },
-  { href: "/parques-pet-friendly", label: "Parques" },
-  { href: "/mascotas-perdidas", label: "Mascotas perdidas" },
-  { href: "/registro", label: "Registro" },
-];
+interface SiteHeaderProps {
+  categories: CategoryDefinition[];
+}
 
-export function SiteHeader() {
+export function SiteHeader({ categories }: SiteHeaderProps) {
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const placeNavItems = categories
+    .filter((category) => category.kind === "place")
+    .map((category) => ({
+      href: category.route,
+      label: category.shortLabel,
+    }));
+  const utilityNavItems = [
+    { href: "/mascotas-perdidas", label: "Mascotas perdidas" },
+    { href: "/registro", label: "Registro" },
+  ];
+  const navItems = [...placeNavItems, ...utilityNavItems];
 
   useEffect(() => {
     setIsMenuOpen(false);
@@ -31,9 +39,22 @@ export function SiteHeader() {
           <div className={styles.mark}>E</div>
           <div className={styles.brandBlock}>
             <span className={styles.brandTitle}>Elbigotes</span>
-            <span className={styles.brandSubtitle}>Mapa público del ecosistema pet</span>
+            {/*<span className={styles.brandSubtitle}>Mapa público del ecosistema pet</span> */}
           </div>
         </Link>
+
+        <nav className={styles.desktopNav} aria-label="Navegación principal">
+          <div className={styles.desktopNavInner}>
+            {navItems.map((item) => (
+              <Link key={item.href} href={item.href} className={styles.navLink}>
+                {item.label}
+              </Link>
+            ))}
+            <Button href="/publicar-mascota-perdida" variant="secondary">
+              Publicar 📢
+            </Button>
+          </div>
+        </nav>
 
         <div className={styles.actions}>
           <ThemeToggleButton compact />
@@ -52,19 +73,6 @@ export function SiteHeader() {
         </div>
       </div>
 
-      <nav className={styles.desktopNav} aria-label="Navegación principal">
-        <div className={styles.desktopNavInner}>
-          {navItems.map((item) => (
-            <Link key={item.href} href={item.href} className={styles.navLink}>
-              {item.label}
-            </Link>
-          ))}
-          <Button href="/publicar-mascota-perdida" variant="secondary">
-            Publicar reporte
-          </Button>
-        </div>
-      </nav>
-
       <nav
         id="mobile-site-nav"
         className={`${styles.mobileNav} ${isMenuOpen ? styles.mobileNavOpen : ""}`.trim()}
@@ -77,7 +85,7 @@ export function SiteHeader() {
             </Link>
           ))}
           <Button href="/publicar-mascota-perdida" variant="secondary" fullWidth>
-            Publicar reporte
+            Publicar 📢
           </Button>
         </div>
       </nav>

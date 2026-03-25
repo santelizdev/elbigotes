@@ -17,10 +17,12 @@ export function ThemeToggle() {
 }
 
 export function ThemeToggleButton({ compact = false }: { compact?: boolean }) {
-  const [theme, setTheme] = useState<ThemeMode>("dark");
+  const [theme, setTheme] = useState<ThemeMode>(() => getInitialTheme());
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setTheme(getInitialTheme());
+    setMounted(true);
   }, []);
 
   function handleToggle() {
@@ -35,13 +37,17 @@ export function ThemeToggleButton({ compact = false }: { compact?: boolean }) {
       type="button"
       className={`theme-toggle ${compact ? "theme-toggle--compact" : ""}`.trim()}
       onClick={handleToggle}
-      aria-label={`Cambiar a tema ${theme === "dark" ? "claro" : "oscuro"}`}
-      title={`Cambiar a tema ${theme === "dark" ? "claro" : "oscuro"}`}
+      aria-label={
+        mounted ? `Cambiar a tema ${theme === "dark" ? "claro" : "oscuro"}` : "Cambiar tema"
+      }
+      title={mounted ? `Cambiar a tema ${theme === "dark" ? "claro" : "oscuro"}` : "Cambiar tema"}
     >
       <span className="theme-toggle__icon" aria-hidden="true">
-        {theme === "dark" ? "☀" : "☾"}
+        {mounted ? (theme === "dark" ? "☀" : "☾") : "◐"}
       </span>
-      <span className="theme-toggle__label">{theme === "dark" ? "Light" : "Dark"}</span>
+      <span className="theme-toggle__label">
+        {mounted ? (theme === "dark" ? "Light" : "Dark") : "Tema"}
+      </span>
     </button>
   );
 }

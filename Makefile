@@ -1,6 +1,6 @@
 PROJECT_NAME=elbigotes
 
-.PHONY: build up down logs migrate makemigrations shell superuser seed test lint format
+.PHONY: build up down logs migrate makemigrations shell superuser seed test lint format validate_catalog
 
 build:
 	docker compose build
@@ -29,6 +29,9 @@ superuser:
 seed:
 	docker compose run --rm web python src/manage.py seed_platform
 
+validate_catalog:
+	docker compose run --rm web python src/manage.py validate_public_catalog --fail-on-warning
+
 test:
 	docker compose run --rm web pytest
 
@@ -37,4 +40,3 @@ lint:
 
 format:
 	docker compose run --rm web ruff check . --fix
-

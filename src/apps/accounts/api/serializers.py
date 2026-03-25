@@ -16,6 +16,9 @@ from apps.accounts.services import (
     update_business_account,
 )
 from apps.accounts.tokens import create_access_token
+from apps.lost_pets.api.serializers import LostPetReportListSerializer
+from apps.lost_pets.models import LostPetReport
+from apps.memberships.models import MembershipAssignment
 from apps.places.models import Place
 from apps.taxonomy.models import Category
 
@@ -26,8 +29,28 @@ class UserSummarySerializer(serializers.ModelSerializer):
         fields = ("id", "email", "email_verified", "first_name", "last_name", "role")
 
 
+class MembershipAssignmentSummarySerializer(serializers.ModelSerializer):
+    plan_name = serializers.CharField(source="plan.name", read_only=True)
+    plan_slug = serializers.CharField(source="plan.slug", read_only=True)
+    audience = serializers.CharField(source="plan.audience", read_only=True)
+
+    class Meta:
+        model = MembershipAssignment
+        fields = (
+            "id",
+            "plan_name",
+            "plan_slug",
+            "audience",
+            "status",
+            "starts_at",
+            "ends_at",
+            "renews_at",
+        )
+
+
 class BusinessProfileSerializer(serializers.ModelSerializer):
     place_slug = serializers.CharField(source="place.slug", read_only=True)
+    memberships = serializers.SerializerMethodField()
 
     class Meta:
         model = BusinessProfile
@@ -43,7 +66,12 @@ class BusinessProfileSerializer(serializers.ModelSerializer):
             "grace_expires_at",
             "marketing_opt_in",
             "notes",
+            "memberships",
         )
+
+    def get_memberships(self, obj):
+        assignments = MembershipAssignment.objects.for_owner(obj)
+        return MembershipAssignmentSummarySerializer(assignments, many=True).data
 
 
 class PetProfileSerializer(serializers.ModelSerializer):
@@ -54,10 +82,23 @@ class PetProfileSerializer(serializers.ModelSerializer):
 
 class PetOwnerProfileSerializer(serializers.ModelSerializer):
     pets = PetProfileSerializer(many=True, read_only=True)
+    memberships = serializers.SerializerMethodField()
 
     class Meta:
         model = PetOwnerProfile
-        fields = ("phone", "address_line", "commune", "region", "marketing_opt_in", "pets")
+        fields = (
+            "phone",
+            "address_line",
+            "commune",
+            "region",
+            "marketing_opt_in",
+            "pets",
+            "memberships",
+        )
+
+    def get_memberships(self, obj):
+        assignments = MembershipAssignment.objects.for_owner(obj)
+        return MembershipAssignmentSummarySerializer(assignments, many=True).data
 
 
 class BusinessOwnedPlaceSerializer(serializers.ModelSerializer):
@@ -281,6 +322,20 @@ class BusinessWorkspaceSerializer(serializers.Serializer):
             many=True,
             context={"profile": profile},
         ).data
+
+
+class PetOwnerWorkspaceSerializer(serializers.Serializer):
+    user = UserSummarySerializer()
+    profile = PetOwnerProfileSerializer()
+    reports = serializers.SerializerMethodField()
+
+    def get_reports(self, obj):
+        profile = obj["profile"]
+        reports = LostPetReport.objects.filter(metadata__pet_owner_profile_id=profile.id).order_by(
+            "-last_seen_at",
+            "-created_at",
+        )
+        return LostPetReportListSerializer(reports, many=True, context=self.context).data
 
 
 class BusinessWorkspaceUpdateSerializer(serializers.Serializer):
