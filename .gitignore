@@ -1,0 +1,40 @@
+# Dependencies
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+
+# Python
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# Django
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+local_settings.py
+
+# Docker / Compose (si no quieres versionar las configs locales)
+compose/
+
+# Data y ejemplos locales
+data/
+
+# Environment variables
+.env
+.env*.local
+
+# IDEs
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db

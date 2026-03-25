@@ -1,0 +1,65 @@
+.sheet {
+  display: grid;
+  gap: 1rem;
+  padding: 1.2rem;
+  border-radius: 1.3rem;
+  background:
+    linear-gradient(180deg, rgba(14, 27, 36, 0.98), rgba(11, 21, 29, 0.98)),
+    var(--surface-elevated);
+  border: 1px solid color-mix(in srgb, var(--accent-emerald) 18%, transparent);
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.title {
+  margin: 0.2rem 0 0;
+  font-size: 1.12rem;
+}
+
+.description {
+  margin: 0;
+  color: var(--text-soft);
+  line-height: 1.6;
+}
+
+.grid {
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.metaCard {
+  padding: 0.9rem;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.metaLabel {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  margin-bottom: 0.35rem;
+}
+
+.metaValue {
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 760px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
