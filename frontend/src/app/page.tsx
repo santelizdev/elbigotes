@@ -19,7 +19,7 @@ export default async function HomePage({
   );
   const initialCategory = getSingleQueryValue(resolvedSearchParams.category);
   const categories = await getPublicCategories();
-  const { places, lostPets, hasError } = await loadHomePageData();
+  const { places, hasError } = await loadHomePageData();
 
   return (
     <>
@@ -32,7 +32,6 @@ export default async function HomePage({
         initialPlaces={places}
         initialCategory={initialCategory}
         categories={categories}
-        lostPetsCount={lostPets.length}
       />
     </>
   );

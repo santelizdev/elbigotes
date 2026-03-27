@@ -3,7 +3,6 @@ import { apiRequest } from "@/lib/services/api-client";
 export interface RegistrationCatalogItem {
   value: string;
   label: string;
-  billing_mode?: string;
 }
 
 export interface BusinessRegistrationPayload {
@@ -98,8 +97,6 @@ export interface BusinessRegistrationResponse {
     commune: string;
     region: string;
     website?: string;
-    membership_status: string;
-    grace_expires_at?: string | null;
     marketing_opt_in: boolean;
     notes?: string;
     memberships: MembershipAssignmentSummary[];
@@ -195,7 +192,6 @@ export interface PetOwnerWorkspaceResponse {
 
 export async function getRegistrationCatalog(): Promise<{
   business_kinds: RegistrationCatalogItem[];
-  membership_status: RegistrationCatalogItem[];
 }> {
   return apiRequest("/accounts/catalog/", {
     cache: "no-store",

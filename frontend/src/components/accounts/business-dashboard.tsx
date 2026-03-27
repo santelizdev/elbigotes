@@ -66,6 +66,10 @@ export function BusinessDashboard() {
   }
 
   const primaryPlace = workspace.places.find((place) => place.is_primary);
+  const currentMembership =
+    workspace.profile.memberships.find((membership) => membership.status === "active") ??
+    workspace.profile.memberships.find((membership) => membership.status === "trial") ??
+    workspace.profile.memberships[0];
 
   return (
     <div className={styles.page}>
@@ -89,11 +93,11 @@ export function BusinessDashboard() {
       <section className={styles.cards}>
         <article className={styles.card}>
           <p className="eyebrow">Membresía</p>
-          <h3>{workspace.profile.membership_status}</h3>
+          <h3>{currentMembership?.plan_name ?? "Sin membresía asignada"}</h3>
           <p>
-            {workspace.profile.grace_expires_at
-              ? `Periodo de gracia activo hasta ${new Date(workspace.profile.grace_expires_at).toLocaleDateString("es-CL")}.`
-              : "Este perfil no tiene una fecha de gracia cargada."}
+            {currentMembership
+              ? `Estado actual: ${currentMembership.status}.`
+              : "Este perfil todavía no tiene una asignación de membresía activa."}
           </p>
         </article>
 

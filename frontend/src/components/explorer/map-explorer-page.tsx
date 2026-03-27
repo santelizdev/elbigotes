@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { FaSearch } from "react-icons/fa";
 
 import styles from "@/components/explorer/map-explorer.module.css";
 import { ExplorerToolbar } from "@/components/filters/explorer-toolbar";
 import { CategoryFilterBar } from "@/components/filters/category-filter-bar";
 import { LeafletMap } from "@/components/map/leaflet-map";
 import { MapLegend } from "@/components/map/map-legend";
-import { PlaceDetailSheet } from "@/components/places/place-detail-sheet";
 import { PlaceList } from "@/components/places/place-list";
 import { ErrorState } from "@/components/shared/error-state";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,6 @@ interface MapExplorerPageProps {
   initialPlaces: Place[];
   initialCategory?: string;
   categories?: CategoryDefinition[];
-  lostPetsCount?: number;
 }
 
 export function MapExplorerPage({
@@ -30,13 +29,11 @@ export function MapExplorerPage({
   initialPlaces,
   initialCategory,
   categories = CATEGORY_DEFINITIONS,
-  lostPetsCount = 0,
 }: MapExplorerPageProps) {
   // La UX prioriza un patrón estable: filtros arriba, resultados a la izquierda y mapa dominante.
   const {
-    places,
+    places: queriedPlaces,
     selectedCategory,
-    search,
     selectedCommune,
     radiusKm,
     hasUserLocation,
@@ -45,7 +42,6 @@ export function MapExplorerPage({
     error,
     locationMessage,
     showOnlyVerified,
-    setSearch,
     setSelectedCommune,
     setRadiusKm,
     setShowOnlyVerified,
@@ -55,6 +51,10 @@ export function MapExplorerPage({
     initialPlaces,
     initialCategory,
   });
+  const [selectedRegion, setSelectedRegion] = useState("");
+  const places = selectedRegion
+    ? queriedPlaces.filter((place) => place.region === selectedRegion)
+    : queriedPlaces;
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(initialPlaces[0] ?? null);
 
   useEffect(() => {
@@ -82,41 +82,16 @@ export function MapExplorerPage({
       };
     });
 
+  const handleRegionChange = (value: string) => {
+    setSelectedRegion(value);
+    setSelectedCommune("");
+  };
+
   return (
     <div className={styles.page}>
-      <section className={styles.hero}>
-        <div className={styles.heroTop}>
-          <div>
-            <p className="eyebrow">Infraestructura pública pet en Chile</p>
-            <h1 className={styles.heroTitle}>{title}</h1>
-            <p className={styles.heroLead}>{description}</p>
-          </div>
-
-          <div className="stack-md">
-            <Button href="/mascotas-perdidas" variant="secondary">
-              Ver Publicaciones Activas
-            </Button>
-            <Button href="/publicar-mascota-perdida" variant="primary">
-              Publicar una mascota perdida
-            </Button>
-          </div>
-        </div>
-
-        <div className={styles.stats}>
-          <div className={styles.statCard}>
-            <span className={styles.statValue}>{places.length}</span>
-            <span className={styles.statLabel}>Puntos cargados en esta vista</span>
-          </div>
-          <div className={styles.statCard}>
-            <span className={styles.statValue}>{places.filter((place) => place.isVerified).length}</span>
-            <span className={styles.statLabel}>Fichas verificadas y listas para usar</span>
-          </div>
-          <div className={styles.statCard}>
-            <span className={styles.statValue}>{lostPetsCount}</span>
-            <span className={styles.statLabel}>Reportes activos de mascotas perdidas</span>
-          </div>
-        </div>
-      </section>
+      <div className={styles.sectionIntro}>
+        <h2 className={styles.sectionTitle}>Que buscas para tu Mascota?</h2>
+      </div>
 
       <CategoryFilterBar
         categories={categories}
@@ -125,14 +100,14 @@ export function MapExplorerPage({
       />
 
       <ExplorerToolbar
-        search={search}
+        region={selectedRegion}
         commune={selectedCommune}
         radiusKm={radiusKm}
         hasUserLocation={hasUserLocation}
         locating={locating}
         locationMessage={locationMessage}
         showOnlyVerified={showOnlyVerified}
-        onSearchChange={setSearch}
+        onRegionChange={handleRegionChange}
         onCommuneChange={setSelectedCommune}
         onRadiusChange={setRadiusKm}
         onLocationToggle={toggleUserLocation}
@@ -161,8 +136,6 @@ export function MapExplorerPage({
               />
             )}
           </section>
-
-          {selectedPlace ? <PlaceDetailSheet place={selectedPlace} /> : null}
         </aside>
 
         <section className={styles.mapPanel}>
@@ -191,6 +164,36 @@ export function MapExplorerPage({
           )}
         </section>
       </div>
+
+      <section className={styles.hero}>
+        <div className={styles.heroTop}>
+          <div>
+            <p className="eyebrow">Infraestructura pública pet en Chile</p>
+            <h1 className={styles.heroTitle}>{title}</h1>
+            <p className={styles.heroLead}>{description}</p>
+          </div>
+
+          <div className={styles.heroActions}>
+            <Button
+              href="/mascotas-perdidas"
+              variant="secondary"
+              className={styles.heroPrimaryAction}
+            >
+              <span className={styles.actionIcon} aria-hidden="true">
+                <FaSearch />
+              </span>
+              Ver publicaciones activas
+            </Button>
+            <Button
+              href="/publicar-mascota-perdida"
+              variant="secondary"
+              className={styles.heroSecondaryAction}
+            >
+              Publicar una mascota perdida
+            </Button>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

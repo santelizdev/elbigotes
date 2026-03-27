@@ -3,7 +3,7 @@
   top: 0;
   z-index: 40;
   backdrop-filter: blur(18px);
-  background: color-mix(in srgb, var(--surface) 86%, transparent);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
   border-bottom: 1px solid var(--border-strong);
 }
 
@@ -25,45 +25,168 @@
   display: flex;
   align-items: center;
   gap: 0.9rem;
+  min-width: 0;
   text-decoration: none;
   color: inherit;
 }
 
-.mark {
-  width: 2.7rem;
-  height: 2.7rem;
-  border-radius: 0.95rem;
+.logoFrame {
+  width: 3.35rem;
+  height: 3.35rem;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 1.15rem;
   background:
     radial-gradient(
       circle at top,
-      color-mix(in srgb, var(--accent-emerald) 42%, transparent),
+      color-mix(in srgb, var(--accent-emerald) 35%, transparent),
       transparent 60%
     ),
-    linear-gradient(135deg, #0f2d34, #173f47);
-  border: 1px solid color-mix(in srgb, var(--accent-emerald) 26%, transparent);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
-  display: grid;
-  place-items: center;
-  font-family: var(--font-display);
-  font-size: 1.1rem;
-  font-weight: 700;
-  transform: translateY(0.2rem);
+    linear-gradient(140deg, #173942, #123038);
+  border: 1px solid color-mix(in srgb, var(--accent-emerald) 20%, transparent);
+  box-shadow:
+    0 16px 32px rgba(7, 20, 25, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.logoImage {
+  width: 2.65rem;
+  height: 2.65rem;
 }
 
 .brandBlock {
   display: grid;
-  gap: 0.12rem;
+  gap: 0.15rem;
 }
 
 .brandTitle {
   font-family: var(--font-display);
-  font-size: 1.02rem;
+  font-size: 1.04rem;
   font-weight: 700;
 }
 
 .brandSubtitle {
   color: var(--text-muted);
-  font-size: 0.82rem;
+  font-size: 0.84rem;
+}
+
+.desktopNav {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.desktopNavInner {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.45rem;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.dropdown {
+  position: relative;
+}
+
+.dropdownTrigger,
+.navLink,
+.iconLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2.9rem;
+  padding: 0.62rem 0.92rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.94rem;
+  cursor: pointer;
+}
+
+.dropdownTrigger:hover,
+.navLink:hover,
+.iconLink:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+}
+
+.navIcon {
+  width: 1rem;
+  height: 1rem;
+  display: inline-grid;
+  place-items: center;
+}
+
+.navIcon svg,
+.chevronOpen,
+.dropdownTrigger svg,
+.iconLink svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.dropdownPanel {
+  position: absolute;
+  top: calc(100% + 0.55rem);
+  right: 0;
+  min-width: 14rem;
+  padding: 0.5rem;
+  border-radius: 1.2rem;
+  border: 1px solid var(--border-strong);
+  background: color-mix(in srgb, var(--surface-raised) 96%, transparent);
+  box-shadow: 0 22px 48px rgba(0, 0, 0, 0.24);
+}
+
+.dropdownList,
+.mobileCategoryList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.dropdownLink {
+  display: block;
+  padding: 0.75rem 0.9rem;
+  border-radius: 1rem;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.dropdownLink:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+.publishButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.9rem;
+  padding: 0.82rem 1.12rem;
+  border-radius: 999px;
+  text-decoration: none;
+  font-weight: 600;
+  border: 1px solid transparent;
+  box-shadow: 0 14px 28px rgba(7, 20, 25, 0.08);
+}
+
+.publishButtonMint {
+  background: linear-gradient(135deg, var(--accent-emerald), #106b78);
+  color: white;
+}
+
+.publishButtonLight {
+  background: white;
+  color: #123038;
+  border-color: rgba(18, 48, 56, 0.08);
 }
 
 .actions {
@@ -96,47 +219,55 @@
   background: currentColor;
 }
 
-.desktopNav {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.desktopNavInner {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.5rem;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  scrollbar-width: none;
-  white-space: nowrap;
-}
-
-.desktopNavInner::-webkit-scrollbar {
-  display: none;
-}
-
-.navLink,
-.mobileNavLink {
-  color: var(--text-muted);
-  text-decoration: none;
-  font-size: 0.94rem;
-  padding: 0.55rem 0.85rem;
-  border-radius: 999px;
-}
-
-.navLink:hover,
-.mobileNavLink:hover {
-  color: var(--text);
-  background: rgba(255, 255, 255, 0.04);
-}
-
 .mobileNav {
   display: none;
 }
 
+.mobileSection {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.mobileSectionTitle {
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-muted);
+}
+
+.mobileNavLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  width: 100%;
+  padding: 0.82rem 0.95rem;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.mobileFooterActions {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.publishButtonBlock {
+  width: 100%;
+}
+
 .backdrop {
   display: none;
+}
+
+@media (max-width: 980px) {
+  .brandSubtitle {
+    display: none;
+  }
+
+  .desktopNavInner {
+    gap: 0.25rem;
+  }
 }
 
 @media (max-width: 860px) {
@@ -144,7 +275,6 @@
     padding: 0.75rem 0;
   }
 
-  .brandBlock,
   .desktopNav {
     display: none;
   }
@@ -167,19 +297,12 @@
 
   .mobileNavInner {
     display: grid;
-    gap: 0.35rem;
+    gap: 0.7rem;
     padding: 0.9rem;
     border-radius: 1.35rem;
     border: 1px solid var(--border-strong);
     background: color-mix(in srgb, var(--surface-raised) 95%, transparent);
     box-shadow: 0 20px 48px rgba(0, 0, 0, 0.24);
-  }
-
-  .mobileNavLink {
-    width: 100%;
-    padding: 0.8rem 0.95rem;
-    border-radius: 1rem;
-    background: rgba(255, 255, 255, 0.03);
   }
 
   .backdrop {
@@ -189,5 +312,16 @@
     display: block;
     border: none;
     background: transparent;
+  }
+}
+
+@media (max-width: 560px) {
+  .brandTitle {
+    font-size: 0.98rem;
+  }
+
+  .logoFrame {
+    width: 3.05rem;
+    height: 3.05rem;
   }
 }

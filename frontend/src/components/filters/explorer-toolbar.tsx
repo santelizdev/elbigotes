@@ -3,17 +3,17 @@
 import { ChangeEvent } from "react";
 
 import { Button } from "@/components/ui/button";
-import { getAllCommunes } from "@/lib/constants/chile-locations";
+import { CHILE_REGIONS, getCommunesForRegion } from "@/lib/constants/chile-locations";
 
 interface ExplorerToolbarProps {
-  search: string;
+  region: string;
   commune: string;
   radiusKm: number | null;
   hasUserLocation: boolean;
   locating: boolean;
   locationMessage?: string | null;
   showOnlyVerified: boolean;
-  onSearchChange: (value: string) => void;
+  onRegionChange: (value: string) => void;
   onCommuneChange: (value: string) => void;
   onRadiusChange: (value: number | null) => void;
   onLocationToggle: () => void;
@@ -21,31 +21,45 @@ interface ExplorerToolbarProps {
 }
 
 export function ExplorerToolbar({
-  search,
+  region,
   commune,
   radiusKm,
   hasUserLocation,
   locating,
   locationMessage,
   showOnlyVerified,
-  onSearchChange,
+  onRegionChange,
   onCommuneChange,
   onRadiusChange,
   onLocationToggle,
   onVerifiedChange,
 }: ExplorerToolbarProps) {
-  const communes = getAllCommunes();
+  const communes = region ? getCommunesForRegion(region) : [];
+  const helperMessage =
+    locationMessage ??
+    (hasUserLocation
+      ? "Region, comuna y radio pueden combinarse para acotar el mapa sin perder la categoria seleccionada."
+      : "Primero elige una region o comuna, o activa 'Usar mi direccion' para delimitar la busqueda por radio.");
 
   return (
     <div className="toolbar">
-      <label className="toolbar__search">
-        <span className="sr-only">Buscar por nombre o dirección</span>
-        <input
-          type="search"
-          value={search}
-          onChange={(event: ChangeEvent<HTMLInputElement>) => onSearchChange(event.target.value)}
-          placeholder="Buscar por nombre, comuna o dirección"
-        />
+      <Button onClick={onLocationToggle} type="button" variant="secondary">
+        {locating ? "Ubicando..." : hasUserLocation ? "Quitar mi direccion" : "Usar mi direccion"}
+      </Button>
+
+      <label className="toolbar__field">
+        <span className="toolbar__label">Region</span>
+        <select
+          value={region}
+          onChange={(event: ChangeEvent<HTMLSelectElement>) => onRegionChange(event.target.value)}
+        >
+          <option value="">Todas las regiones</option>
+          {CHILE_REGIONS.map((item) => (
+            <option key={item.region} value={item.region}>
+              {item.region}
+            </option>
+          ))}
+        </select>
       </label>
 
       <label className="toolbar__field">
@@ -53,8 +67,9 @@ export function ExplorerToolbar({
         <select
           value={commune}
           onChange={(event: ChangeEvent<HTMLSelectElement>) => onCommuneChange(event.target.value)}
+          disabled={!region}
         >
-          <option value="">Todas las comunas</option>
+          <option value="">{region ? "Todas las comunas" : "Selecciona una region"}</option>
           {communes.map((item) => (
             <option key={item} value={item}>
               {item}
@@ -89,15 +104,7 @@ export function ExplorerToolbar({
         <span>Solo fichas verificadas</span>
       </label>
 
-      <Button onClick={onLocationToggle} type="button" variant="secondary">
-        {locating ? "Ubicando..." : hasUserLocation ? "Quitar radio" : "Usar mi ubicación"}
-      </Button>
-
-      <Button href="/publicar-mascota-perdida" variant="primary">
-        Publicar mascota perdida
-      </Button>
-
-      {locationMessage ? <p className="toolbar__helper">{locationMessage}</p> : null}
+      <p className="toolbar__helper">{helperMessage}</p>
     </div>
   );
 }

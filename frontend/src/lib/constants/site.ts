@@ -3,12 +3,12 @@ export const siteConfig = {
   description:
     "Infraestructura pública del ecosistema pet en Chile: mapa, servicios y reportes con enfoque confiable.",
   defaultTitle: "Elbigotes | Mapa del ecosistema pet en Chile",
-  apiBaseUrl: process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000/api/v1",
+  apiBaseUrl: process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api/v1",
   internalApiBaseUrl:
     process.env.INTERNAL_API_BASE_URL ??
     process.env.NEXT_PUBLIC_API_BASE_URL ??
     "http://localhost:8000/api/v1",
-  siteUrl: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
+  siteUrl: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:13000",
   defaultCenter: {
     lat: Number(process.env.NEXT_PUBLIC_DEFAULT_LAT ?? "-33.4489"),
     lng: Number(process.env.NEXT_PUBLIC_DEFAULT_LNG ?? "-70.6693"),

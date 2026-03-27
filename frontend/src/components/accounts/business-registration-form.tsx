@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useState } from "react";
 
 import styles from "@/components/accounts/registration.module.css";
 import { LocationPicker } from "@/components/map/location-picker";
@@ -27,11 +27,6 @@ export function BusinessRegistrationForm({
   const [selectedRegion, setSelectedRegion] = useState<string>(DEFAULT_REGION);
   const [selectedLatitude, setSelectedLatitude] = useState<number | undefined>(undefined);
   const [selectedLongitude, setSelectedLongitude] = useState<number | undefined>(undefined);
-
-  const selectedDefinition = useMemo(
-    () => businessKinds.find((item) => item.value === selectedKind),
-    [businessKinds, selectedKind],
-  );
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -68,20 +63,14 @@ export function BusinessRegistrationForm({
     };
 
     try {
-      const response = await registerBusinessAccount(payload);
+      await registerBusinessAccount(payload);
       form.reset();
       setSelectedKind(businessKinds[0]?.value ?? "veterinary");
       setSelectedRegion(DEFAULT_REGION);
       setSelectedLatitude(undefined);
       setSelectedLongitude(undefined);
-      const membershipStatus =
-        response && typeof response === "object" && "profile" in response
-          ? response.profile.membership_status
-          : null;
       setSuccessMessage(
-        membershipStatus === "free_forever"
-          ? "Cuenta creada. La ficha quedó en revisión manual y este tipo de organización seguirá siendo gratuita cuando se publique."
-          : "Cuenta creada. La ficha quedó en revisión manual y el negocio sigue marcado con periodo de gracia para futura membresía.",
+        "Cuenta creada. La ficha quedó en revisión manual y la membresía se administrará desde asignaciones cuando corresponda.",
       );
     } catch (error) {
       setError(
@@ -236,19 +225,18 @@ export function BusinessRegistrationForm({
 
         <aside className={styles.aside}>
           <section className={styles.asideCard}>
-            <h3>Política comercial inicial</h3>
+            <h3>Operación comercial</h3>
             <div className={styles.statusBox}>
-              {selectedDefinition?.billing_mode === "free_forever"
-                ? "Refugios y parques quedan marcados como gratuitos permanentes."
-                : "Veterinarias, guarderías y emergencias quedan listas para periodo de gracia y futura membresía."}
+              La cuenta queda creada y la asignación de planes se administra desde membresías, no
+              desde el perfil comercial.
             </div>
           </section>
 
           <section className={styles.asideCard}>
             <h3>Qué deja listo este alta</h3>
             <p>
-              Se crea el usuario, el perfil comercial, la clasificación del negocio y el estado de
-              membresía inicial para que luego podamos sumar reclamación de fichas y cobro.
+              Se crea el usuario, el perfil comercial y la ficha base para que luego puedas sumar
+              sucursales y asignaciones de membresía sin lógica duplicada.
             </p>
           </section>
         </aside>

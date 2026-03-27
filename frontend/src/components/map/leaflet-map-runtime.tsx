@@ -48,7 +48,7 @@ function MapViewportController({
 
     if (focusedPoint) {
       map.stop();
-      map.setView([focusedPoint.latitude, focusedPoint.longitude], 15, {
+      map.setView([focusedPoint.latitude, focusedPoint.longitude], 14, {
         animate: false,
       });
       return;
@@ -68,12 +68,12 @@ function MapViewportController({
 
     if (points.length === 1) {
       map.stop();
-      map.setView([points[0].latitude, points[0].longitude], 13, { animate: false });
+      map.setView([points[0].latitude, points[0].longitude], 14, { animate: false });
       return;
     }
 
     map.stop();
-    map.fitBounds(bounds, { padding: [48, 48], animate: false });
+    map.fitBounds(bounds, { padding: [34, 34], animate: false, maxZoom: 14 });
   }, [focusedPointId, map, points]);
 
   return null;

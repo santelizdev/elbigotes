@@ -10,11 +10,11 @@ export const metadata: Metadata = {
 };
 
 const fallbackBusinessKinds: RegistrationCatalogItem[] = [
-  { value: "veterinary", label: "Veterinaria", billing_mode: "grace" },
-  { value: "daycare", label: "Guarderia", billing_mode: "grace" },
-  { value: "emergency", label: "Emergencia 24/7", billing_mode: "grace" },
-  { value: "shelter", label: "Refugio", billing_mode: "free_forever" },
-  { value: "park", label: "Parque", billing_mode: "free_forever" },
+  { value: "veterinary", label: "Veterinaria" },
+  { value: "daycare", label: "Guarderia" },
+  { value: "emergency", label: "Emergencia 24/7" },
+  { value: "shelter", label: "Refugio" },
+  { value: "park", label: "Parque" },
 ];
 
 export default async function RegistroNegocioPage() {

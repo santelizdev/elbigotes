@@ -31,21 +31,21 @@ const KNOWN_CATEGORY_PRESETS: Record<string, Partial<CategoryDefinition>> = {
     label: "Refugios y albergues",
     shortLabel: "Refugios",
     description: "Organizaciones y espacios de rescate con información geolocalizada.",
-    accent: "var(--accent-emerald)",
+    accent: "var(--accent-cyan)",
     route: "/refugios",
   },
   "parques-pet-friendly": {
     label: "Parques pet friendly",
     shortLabel: "Parques",
     description: "Zonas aptas para paseo, juego y encuentro seguro en ciudad.",
-    accent: "var(--accent-sand)",
+    accent: "var(--accent-lime)",
     route: "/parques-pet-friendly",
   },
   "emergencias-veterinarias": {
     label: "Emergencias veterinarias 24/7",
     shortLabel: "Emergencias",
     description: "Atención crítica y hospitales veterinarios disponibles de forma continua.",
-    accent: "var(--accent-red)",
+    accent: "var(--accent-coral)",
     route: "/emergencias-veterinarias-24-7",
   },
   guarderias: {
@@ -54,6 +54,13 @@ const KNOWN_CATEGORY_PRESETS: Record<string, Partial<CategoryDefinition>> = {
     description: "Cuidado diario y estancias para mascotas con información clara y comparable.",
     accent: "var(--accent-orange)",
     route: "/guarderias",
+  },
+  peluquerias: {
+    label: "Peluquerías",
+    shortLabel: "Peluquerías",
+    description: "Baño, corte y grooming con datos públicos comparables sobre el mapa.",
+    accent: "var(--accent-emerald)",
+    route: "/?category=peluquerias",
   },
 };
 

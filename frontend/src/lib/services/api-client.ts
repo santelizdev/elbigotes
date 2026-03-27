@@ -17,9 +17,26 @@ export class ApiRequestError extends Error {
 }
 
 function buildUrl(path: string, query?: RequestOptions["query"]) {
-  const baseUrl =
+  const rawBaseUrl =
     typeof window === "undefined" ? siteConfig.internalApiBaseUrl : siteConfig.apiBaseUrl;
-  const url = new URL(`${baseUrl}${path}`, siteConfig.siteUrl);
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  const browserOrigin = typeof window === "undefined" ? siteConfig.siteUrl : window.location.origin;
+  let baseUrl = rawBaseUrl;
+
+  if (typeof window !== "undefined") {
+    const candidate = new URL(rawBaseUrl, browserOrigin);
+    if (candidate.origin !== window.location.origin && candidate.pathname.startsWith("/api")) {
+      baseUrl = candidate.pathname.replace(/\/$/, "");
+    } else {
+      baseUrl = candidate.toString().replace(/\/$/, "");
+    }
+  }
+
+  const joinedUrl = `${baseUrl.replace(/\/$/, "")}${normalizedPath}`;
+  const url = baseUrl.startsWith("http")
+    ? new URL(joinedUrl)
+    : new URL(joinedUrl, browserOrigin);
+
   if (query) {
     Object.entries(query).forEach(([key, value]) => {
       if (value === undefined || value === "" || value === false) {

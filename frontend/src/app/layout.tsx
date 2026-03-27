@@ -17,7 +17,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const categories = await getPublicCategories();
 
   return (
-    <html lang="es" suppressHydrationWarning>
+    <html lang="es" suppressHydrationWarning data-theme="light">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -29,9 +29,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           {`
             (() => {
               const storedTheme = localStorage.getItem("elbigotes-theme");
-              const theme =
-                storedTheme ||
-                (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+              const theme = storedTheme || "light";
               document.documentElement.dataset.theme = theme;
             })();
           `}
