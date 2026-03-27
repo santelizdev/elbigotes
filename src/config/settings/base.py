@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     "apps.places",
     "apps.lost_pets",
     "apps.claims",
+    "apps.reviews",
     "apps.ingestion",
 ]
 

@@ -7,4 +7,5 @@ urlpatterns = [
     path("taxonomy/", include("apps.taxonomy.api.urls")),
     path("places/", include("apps.places.api.urls")),
     path("lost-pets/", include("apps.lost_pets.api.urls")),
+    path("reviews/", include("apps.reviews.api.urls")),
 ]
