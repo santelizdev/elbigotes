@@ -1,6 +1,33 @@
+import { ApiRequestError } from "@/lib/services/api-client";
 import { getLostPetReports } from "@/lib/services/lost-pets-service";
 import { getPlaceBySlug, getPlaces } from "@/lib/services/places-service";
 import { LostPetReport, Place, PlaceFilters } from "@/lib/types";
+
+function logLoaderFailure(scope: string, error: unknown) {
+  if (error instanceof ApiRequestError) {
+    console.error(`[${scope}] API request failed`, {
+      status: error.status,
+      details: error.details,
+      message: error.message,
+    });
+    return;
+  }
+
+  if (error instanceof Error) {
+    console.error(`[${scope}] Unexpected error`, {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+    });
+    return;
+  }
+
+  console.error(`[${scope}] Unknown error`, error);
+}
+
+function isDynamicServerUsageError(error: unknown) {
+  return error instanceof Error && error.message.includes("Dynamic server usage:");
+}
 
 export async function loadHomePageData(): Promise<{
   places: Place[];
@@ -8,6 +35,22 @@ export async function loadHomePageData(): Promise<{
   hasError: boolean;
 }> {
   const [placesResult, lostPetsResult] = await Promise.allSettled([getPlaces(), getLostPetReports()]);
+
+  if (placesResult.status === "rejected" && isDynamicServerUsageError(placesResult.reason)) {
+    throw placesResult.reason;
+  }
+
+  if (lostPetsResult.status === "rejected" && isDynamicServerUsageError(lostPetsResult.reason)) {
+    throw lostPetsResult.reason;
+  }
+
+  if (placesResult.status === "rejected") {
+    logLoaderFailure("home:places", placesResult.reason);
+  }
+
+  if (lostPetsResult.status === "rejected") {
+    logLoaderFailure("home:lost-pets", lostPetsResult.reason);
+  }
 
   return {
     places: placesResult.status === "fulfilled" ? placesResult.value : [],
@@ -25,7 +68,11 @@ export async function loadLostPetsPageData(): Promise<{
   try {
     const lostPets = await getLostPetReports();
     return { lostPets, hasError: false };
-  } catch {
+  } catch (error) {
+    if (isDynamicServerUsageError(error)) {
+      throw error;
+    }
+    logLoaderFailure("lost-pets:index", error);
     return { lostPets: [], hasError: true };
   }
 }
@@ -37,7 +84,11 @@ export async function loadPlacesPageData(filters: PlaceFilters): Promise<{
   try {
     const places = await getPlaces(filters);
     return { places, hasError: false };
-  } catch {
+  } catch (error) {
+    if (isDynamicServerUsageError(error)) {
+      throw error;
+    }
+    logLoaderFailure("places:index", error);
     return { places: [], hasError: true };
   }
 }
@@ -49,7 +100,11 @@ export async function loadPlaceDetailData(slug: string): Promise<{
   try {
     const place = await getPlaceBySlug(slug);
     return { place, hasError: false };
-  } catch {
+  } catch (error) {
+    if (isDynamicServerUsageError(error)) {
+      throw error;
+    }
+    logLoaderFailure(`places:detail:${slug}`, error);
     return { place: null, hasError: true };
   }
 }

@@ -2,6 +2,7 @@
 
 import { startTransition, useDeferredValue, useEffect, useState } from "react";
 
+import { ApiRequestError, getApiErrorMessage } from "@/lib/services/api-client";
 import { Place, PlaceFilters } from "@/lib/types";
 import { getPlaces } from "@/lib/services/places-service";
 
@@ -47,11 +48,28 @@ export function usePlacesQuery({ initialPlaces, initialCategory }: UsePlacesQuer
         }
         setPlaces(items);
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         if (!active) {
           return;
         }
-        setError("No fue posible cargar los puntos del mapa.");
+
+        if (error instanceof ApiRequestError) {
+          console.error("[usePlacesQuery] API request failed", {
+            status: error.status,
+            details: error.details,
+            category: filters.category,
+            search: filters.search,
+            commune: filters.commune,
+            radiusKm: filters.radiusKm,
+            verifiedOnly: filters.verifiedOnly,
+          });
+        } else {
+          console.error("[usePlacesQuery] Unexpected error", error);
+        }
+
+        setError(
+          getApiErrorMessage(error, "No fue posible cargar los puntos del mapa en este momento."),
+        );
       })
       .finally(() => {
         if (active) {
