@@ -26,8 +26,8 @@ Este repositorio contiene el **backend** (Django), preparado para escalar a otro
 - **Backend**: Django 5 + Django REST Framework
 - **Base de datos**: PostgreSQL + PostGIS
 - **Tareas asíncronas**: Celery + Redis
-- **Contenedores**: Docker + Docker Compose + Nginx
-- **Frontend** (próximamente): Next.js 15 (App Router) + TypeScript + Leaflet
+- **Contenedores**: Docker + Docker Compose
+- **Frontend**: Next.js 15 (App Router) + TypeScript + Leaflet
 
 ## Estructura del proyecto
 
@@ -41,3 +41,53 @@ src/apps/
 ├── accounts/       # Usuarios, perfiles y permisos
 ├── claims/         # Reclamos y moderación
 └── config/         # Settings por entorno y Celery
+
+## Despliegue Recomendado
+
+La arquitectura recomendada a partir de este punto es:
+
+- `frontend` (Next.js) publica la app web.
+- `web` (Django) publica API, admin, `static` y `media`.
+- Hestia es el unico reverse proxy publico en VPS.
+
+### Local con Docker
+
+- `frontend` queda publicado en `http://localhost:13000`
+- `web` queda publicado en `http://localhost:18000`
+- El navegador llama la API directo a `http://localhost:18000/api/v1`
+- El SSR de Next llama internamente a `http://web:8000/api/v1`
+
+Variables clave del `.env` local:
+
+```env
+NEXT_PUBLIC_SITE_URL=http://localhost:13000
+NEXT_PUBLIC_API_BASE_URL=http://localhost:18000/api/v1
+INTERNAL_API_BASE_URL=http://web:8000/api/v1
+```
+
+### VPS con Hestia
+
+- Hestia termina SSL y hace reverse proxy.
+- `frontend` debe exponerse solo a loopback, por ejemplo `127.0.0.1:13000`
+- `web` debe exponerse solo a loopback, por ejemplo `127.0.0.1:18000`
+- Hestia debe enrutar:
+  - `/` -> `127.0.0.1:13000`
+  - `/api`, `/admin`, `/static`, `/media` -> `127.0.0.1:18000`
+
+Variables clave del `.env` en VPS:
+
+```env
+NEXT_PUBLIC_SITE_URL=https://www.elbigotes.cl
+NEXT_PUBLIC_API_BASE_URL=/api/v1
+INTERNAL_API_BASE_URL=http://web:8000/api/v1
+DJANGO_ALLOWED_HOSTS=www.elbigotes.cl,elbigotes.cl,127.0.0.1,localhost,web
+```
+
+### Diferencia importante entre local y VPS
+
+La unica diferencia deliberada es la URL que usa el navegador:
+
+- En local el navegador consume Django directo por puerto (`http://localhost:18000`)
+- En VPS el navegador consume la API por el mismo dominio publico (`/api/v1`) a traves de Hestia
+
+El SSR de Next se mantiene estable en ambos casos usando `INTERNAL_API_BASE_URL=http://web:8000/api/v1`.

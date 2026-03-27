@@ -55,6 +55,8 @@ services:
     container_name: elbigotes-frontend
     env_file:
       - .env
+    ports:
+      - "${FRONTEND_HOST_BIND:-127.0.0.1}:${FRONTEND_HOST_PORT:-13000}:3000"
     depends_on:
       web:
         condition: service_started
@@ -90,19 +92,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
-
-  nginx:
-    image: nginx:1.27-alpine
-    container_name: elbigotes-nginx
-    depends_on:
-      - frontend
-      - web
-    ports:
-      - "${NGINX_HOST_BIND:-127.0.0.1}:${NGINX_HOST_PORT:-18080}:80"
-    volumes:
-      - ./compose/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
-      - static_volume:/vol/web/static
-      - media_volume:/vol/web/media
 
 volumes:
   postgres_data:

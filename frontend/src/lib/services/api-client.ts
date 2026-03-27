@@ -31,16 +31,28 @@ function buildUrl(path: string, query?: RequestOptions["query"]) {
   return url.toString();
 }
 
+function buildServerHeaders(headers?: HeadersInit) {
+  if (typeof window !== "undefined") {
+    return headers;
+  }
+
+  const forwardedProtocol = new URL(siteConfig.siteUrl).protocol.replace(":", "");
+  return {
+    "X-Forwarded-Proto": forwardedProtocol,
+    ...headers,
+  };
+}
+
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
   // Centralizar la llamada HTTP simplifica futuras decisiones como auth, tracing o retries.
   const { query, headers, ...rest } = options;
   const isFormDataBody = rest.body instanceof FormData;
   const response = await fetch(buildUrl(path, query), {
     headers: isFormDataBody
-      ? headers
+      ? buildServerHeaders(headers)
       : {
           "Content-Type": "application/json",
-          ...headers,
+          ...buildServerHeaders(headers),
         },
     ...rest,
   });
