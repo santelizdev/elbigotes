@@ -113,6 +113,11 @@ export function PlaceProfile({ place }: { place: Place }) {
                 Contactar ahora
               </Button>
             ) : null}
+            {!place.isVerified ? (
+              <Button href={`/lugares/${place.slug}/reclamar`} variant="secondary">
+                Reclamar propiedad
+              </Button>
+            ) : null}
             <Button href="/" variant="ghost">
               Volver al mapa principal
             </Button>

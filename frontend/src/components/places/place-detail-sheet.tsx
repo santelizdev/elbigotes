@@ -66,6 +66,11 @@ export function PlaceDetailSheet({ place }: { place: Place }) {
             Contactar ahora
           </Button>
         ) : null}
+        {!place.isVerified ? (
+          <Button href={`/lugares/${place.slug}/reclamar`} variant="secondary">
+            Reclamar propiedad
+          </Button>
+        ) : null}
         <Button href={`/lugares/${place.slug}`} variant="secondary">
           Abrir ficha completa
         </Button>
