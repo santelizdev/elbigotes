@@ -9,6 +9,7 @@ from apps.lost_pets.models import LostPetReport
 class LostPetReportAdmin(GISModelAdmin):
     list_display = (
         "pet_name",
+        "pet_profile",
         "species",
         "status",
         "moderation_status",
@@ -17,8 +18,15 @@ class LostPetReportAdmin(GISModelAdmin):
         "created_at",
     )
     list_filter = ("species", "status", "sex", "moderation_status")
-    search_fields = ("pet_name", "breed", "color_description", "reporter_name", "reporter_phone")
-    autocomplete_fields = ("source",)
+    search_fields = (
+        "pet_name",
+        "pet_profile__name",
+        "breed",
+        "color_description",
+        "reporter_name",
+        "reporter_phone",
+    )
+    autocomplete_fields = ("source", "pet_profile")
     readonly_fields = ("created_at", "updated_at", "moderated_at")
     actions = ("approve_reports", "reject_reports")
 

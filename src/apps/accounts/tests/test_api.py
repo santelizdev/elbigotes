@@ -8,7 +8,6 @@ from rest_framework.test import APIClient
 from apps.accounts.models import (
     BusinessKind,
     BusinessProfile,
-    MembershipStatus,
     PetOwnerProfile,
     PetProfile,
     User,
@@ -27,7 +26,7 @@ from apps.taxonomy.models import Category
 
 
 @pytest.mark.django_db
-def test_register_business_account_creates_grace_or_free_profile():
+def test_register_business_account_creates_profile_and_primary_place():
     client = APIClient()
     Category.objects.create(name="Veterinarias", slug="veterinarias")
 
@@ -56,8 +55,6 @@ def test_register_business_account_creates_grace_or_free_profile():
     profile = BusinessProfile.objects.get(user=user)
 
     assert user.role == UserRole.BUSINESS_OWNER
-    assert profile.membership_status == MembershipStatus.GRACE
-    assert profile.grace_expires_at is not None
     assert profile.place is not None
     assert profile.place.category.slug == "veterinarias"
     assert profile.place.status == "draft"
@@ -245,6 +242,7 @@ def test_pet_owner_workspace_returns_pets_reports_and_memberships():
         reporter_phone="+56999990000",
         reporter_email="pet-owner@example.com",
         moderation_status="approved",
+        pet_profile=pet,
         metadata={"pet_owner_profile_id": profile.id, "pet_profile_id": pet.id},
     )
 

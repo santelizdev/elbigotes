@@ -1,10 +1,10 @@
 from django.contrib.auth import authenticate
+from django.db.models import Q
 from rest_framework import serializers
 
 from apps.accounts.models import (
     BusinessKind,
     BusinessProfile,
-    MembershipStatus,
     PetOwnerProfile,
     PetProfile,
     User,
@@ -62,8 +62,6 @@ class BusinessProfileSerializer(serializers.ModelSerializer):
             "commune",
             "region",
             "website",
-            "membership_status",
-            "grace_expires_at",
             "marketing_opt_in",
             "notes",
             "memberships",
@@ -331,9 +329,12 @@ class PetOwnerWorkspaceSerializer(serializers.Serializer):
 
     def get_reports(self, obj):
         profile = obj["profile"]
-        reports = LostPetReport.objects.filter(metadata__pet_owner_profile_id=profile.id).order_by(
-            "-last_seen_at",
-            "-created_at",
+        reports = (
+            LostPetReport.objects.filter(
+                Q(pet_profile__owner=profile) | Q(metadata__pet_owner_profile_id=profile.id)
+            )
+            .distinct()
+            .order_by("-last_seen_at", "-created_at")
         )
         return LostPetReportListSerializer(reports, many=True, context=self.context).data
 
@@ -401,7 +402,6 @@ class BusinessBranchCreateSerializer(serializers.Serializer):
 
 class RegistrationCatalogSerializer(serializers.Serializer):
     business_kinds = serializers.ListField(child=serializers.DictField())
-    membership_status = serializers.ListField(child=serializers.DictField())
 
 
 def build_registration_catalog():
@@ -410,16 +410,7 @@ def build_registration_catalog():
             {
                 "value": value,
                 "label": label,
-                "billing_mode": (
-                    MembershipStatus.FREE_FOREVER
-                    if value in {"shelter", "park"}
-                    else MembershipStatus.GRACE
-                ),
             }
             for value, label in BusinessKind.choices
-        ],
-        "membership_status": [
-            {"value": value, "label": label}
-            for value, label in MembershipStatus.choices
         ],
     }

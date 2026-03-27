@@ -61,6 +61,7 @@ def test_create_lost_pet_report_accepts_multipart_photo_without_coordinates(tmp_
     assert owner_user.role == UserRole.PET_OWNER
     assert owner_profile.phone == "+56912345678"
     assert pet_profile.species == "dog"
+    assert report.pet_profile == pet_profile
 
 
 @pytest.mark.django_db
@@ -92,10 +93,12 @@ def test_create_lost_pet_report_without_email_creates_seed_pet_owner_account():
     owner_user = User.objects.get(email="lostpet-56933334444@petowners.elbigotes.local")
     owner_profile = PetOwnerProfile.objects.get(user=owner_user)
     pet_profile = PetProfile.objects.get(owner=owner_profile, name="Rayo")
+    report = LostPetReport.objects.get(pet_name="Rayo")
 
     assert owner_user.role == UserRole.PET_OWNER
     assert owner_profile.commune == "Ñuñoa"
     assert pet_profile.species == "dog"
+    assert report.pet_profile == pet_profile
 
 
 @pytest.mark.django_db

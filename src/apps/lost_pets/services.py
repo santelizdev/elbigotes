@@ -120,7 +120,8 @@ def _sync_owner_and_pet_profiles(report: LostPetReport) -> None:
         "pet_owner_profile_id": owner_profile.id,
         "pet_profile_id": pet_profile.id,
     }
-    report.save(update_fields=["metadata", "updated_at"])
+    report.pet_profile = pet_profile
+    report.save(update_fields=["metadata", "pet_profile", "updated_at"])
 
 
 def create_lost_pet_report(validated_data):

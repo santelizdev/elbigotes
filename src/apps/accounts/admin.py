@@ -47,13 +47,11 @@ class BusinessProfileAdmin(admin.ModelAdmin):
     list_display = (
         "business_name",
         "business_kind",
-        "membership_status",
         "place",
         "commune",
         "region",
-        "grace_expires_at",
     )
-    list_filter = ("business_kind", "membership_status", "region", "marketing_opt_in")
+    list_filter = ("business_kind", "region", "marketing_opt_in")
     search_fields = ("business_name", "user__email", "phone", "commune")
     autocomplete_fields = ("user", "place")
 

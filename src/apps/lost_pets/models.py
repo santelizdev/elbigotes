@@ -45,6 +45,13 @@ class LostPetReport(TimeStampedModel):
     photo_url = models.URLField(blank=True)
     is_reward_offered = models.BooleanField(default=False)
     reward_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    pet_profile = models.ForeignKey(
+        "accounts.PetProfile",
+        on_delete=models.SET_NULL,
+        related_name="lost_pet_reports",
+        null=True,
+        blank=True,
+    )
     source = models.ForeignKey(
         Source,
         on_delete=models.SET_NULL,

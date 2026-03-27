@@ -1,9 +1,6 @@
-from datetime import timedelta
-
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.utils import timezone
 
 from apps.accounts.managers import UserManager
 from apps.core.models import TimeStampedModel
@@ -24,17 +21,6 @@ class BusinessKind(models.TextChoices):
     EMERGENCY = "emergency", "Emergencia 24/7"
     SHELTER = "shelter", "Refugio"
     PARK = "park", "Parque"
-
-
-class MembershipStatus(models.TextChoices):
-    GRACE = "grace", "Grace period"
-    ACTIVE = "active", "Active membership"
-    PAST_DUE = "past_due", "Past due"
-    FREE_FOREVER = "free_forever", "Free forever"
-
-
-FREE_BUSINESS_KINDS = {BusinessKind.SHELTER, BusinessKind.PARK}
-GRACE_PERIOD_DAYS = 30
 
 
 class User(AbstractUser, TimeStampedModel):
@@ -99,12 +85,6 @@ class BusinessProfile(TimeStampedModel):
     commune = models.CharField(max_length=120)
     region = models.CharField(max_length=120, default="Región Metropolitana")
     website = models.URLField(blank=True)
-    membership_status = models.CharField(
-        max_length=20,
-        choices=MembershipStatus.choices,
-        default=MembershipStatus.GRACE,
-    )
-    grace_expires_at = models.DateTimeField(null=True, blank=True)
     marketing_opt_in = models.BooleanField(default=True)
     notes = models.TextField(blank=True)
 
@@ -115,23 +95,7 @@ class BusinessProfile(TimeStampedModel):
 
     @property
     def is_billable(self) -> bool:
-        return self.business_kind not in FREE_BUSINESS_KINDS
-
-    def apply_membership_policy(self):
-        if self.business_kind in FREE_BUSINESS_KINDS:
-            self.membership_status = MembershipStatus.FREE_FOREVER
-            self.grace_expires_at = None
-            return
-
-        if self.membership_status == MembershipStatus.FREE_FOREVER:
-            self.membership_status = MembershipStatus.GRACE
-
-        if self.grace_expires_at is None:
-            self.grace_expires_at = timezone.now() + timedelta(days=GRACE_PERIOD_DAYS)
-
-    def save(self, *args, **kwargs):
-        self.apply_membership_policy()
-        super().save(*args, **kwargs)
+        return self.business_kind not in {BusinessKind.SHELTER, BusinessKind.PARK}
 
     def __str__(self) -> str:
         return self.business_name

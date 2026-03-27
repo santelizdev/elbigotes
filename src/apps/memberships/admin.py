@@ -24,6 +24,7 @@ class MembershipAssignmentAdmin(admin.ModelAdmin):
     list_display = (
         "plan",
         "status",
+        "owner_label",
         "owner_content_type",
         "owner_object_id",
         "starts_at",
@@ -31,5 +32,13 @@ class MembershipAssignmentAdmin(admin.ModelAdmin):
         "renews_at",
     )
     list_filter = ("status", "plan__audience", "plan__billing_interval")
-    search_fields = ("plan__name", "notes")
-    autocomplete_fields = ("plan",)
+    search_fields = ("plan__name", "owner_object_id", "notes")
+    raw_id_fields = ("plan", "owner_content_type")
+    list_select_related = ("plan", "owner_content_type")
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("plan", "owner_content_type")
+
+    @admin.display(description="Owner")
+    def owner_label(self, obj):
+        return str(obj.owner) if obj.owner else "Sin owner"
