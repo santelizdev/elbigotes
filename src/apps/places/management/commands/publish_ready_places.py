@@ -13,6 +13,15 @@ class Command(BaseCommand):
             help="Incluye fichas con dirección completa aunque todavía no tengan coordenadas.",
         )
         parser.add_argument(
+            "--dataset",
+            help="Limita la publicación a fichas importadas desde un dataset específico.",
+        )
+        parser.add_argument(
+            "--ignore-review-status",
+            action="store_true",
+            help="Publica aunque metadata.review_status no sea 'ready'. Úsalo solo para lotes validados.",
+        )
+        parser.add_argument(
             "--dry-run",
             action="store_true",
             help="Solo informa cuántas fichas serían publicadas sin modificar datos.",
@@ -20,9 +29,15 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         include_address_only = options["include_address_only"]
+        dataset_slug = options["dataset"]
+        ignore_review_status = options["ignore_review_status"]
         dry_run = options["dry_run"]
 
-        queryset = get_publishable_places(include_address_only=include_address_only)
+        queryset = get_publishable_places(
+            include_address_only=include_address_only,
+            dataset_slug=dataset_slug,
+            ignore_review_status=ignore_review_status,
+        )
         count = queryset.count()
 
         if dry_run:
@@ -33,7 +48,11 @@ class Command(BaseCommand):
             )
             return
 
-        updated = publish_ready_places(include_address_only=include_address_only)
+        updated = publish_ready_places(
+            include_address_only=include_address_only,
+            dataset_slug=dataset_slug,
+            ignore_review_status=ignore_review_status,
+        )
         self.stdout.write(
             self.style.SUCCESS(f"Se publicaron {updated} fichas draft.")
         )

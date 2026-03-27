@@ -95,7 +95,17 @@ class Place(TimeStampedModel):
             self.region,
             self.country,
         ]
-        return ", ".join(part for part in parts if part)
+        cleaned_parts: list[str] = []
+        seen_normalized: set[str] = set()
+
+        for part in parts:
+            normalized = " ".join(str(part or "").strip().lower().split())
+            if not normalized or normalized in seen_normalized:
+                continue
+            seen_normalized.add(normalized)
+            cleaned_parts.append(str(part).strip())
+
+        return ", ".join(cleaned_parts)
 
     def save(self, *args, **kwargs):
         if not self.slug:
