@@ -12,7 +12,9 @@ export async function loadHomePageData(): Promise<{
   return {
     places: placesResult.status === "fulfilled" ? placesResult.value : [],
     lostPets: lostPetsResult.status === "fulfilled" ? lostPetsResult.value : [],
-    hasError: placesResult.status === "rejected" || lostPetsResult.status === "rejected",
+    // El home depende críticamente del catálogo de lugares; el contador de mascotas perdidas
+    // es complementario y puede degradarse a cero sin ensuciar toda la portada.
+    hasError: placesResult.status === "rejected",
   };
 }
 
