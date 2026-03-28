@@ -2,6 +2,7 @@ services:
   db:
     image: postgis/postgis:16-3.4
     container_name: elbigotes-db
+    restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -17,6 +18,7 @@ services:
   redis:
     image: redis:7-alpine
     container_name: elbigotes-redis
+    restart: unless-stopped
     volumes:
       - redis_data:/data
 
@@ -25,6 +27,7 @@ services:
       context: .
       dockerfile: compose/django/Dockerfile
     container_name: elbigotes-web
+    restart: unless-stopped
     env_file:
       - .env
     command: ["/app/scripts/start-web.sh"]
@@ -34,6 +37,18 @@ services:
       - media_volume:/vol/web/media
     ports:
       - "${WEB_HOST_BIND:-127.0.0.1}:${WEB_HOST_PORT:-18000}:8000"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health/', timeout=5)",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
     depends_on:
       db:
         condition: service_healthy
@@ -45,27 +60,37 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL}
-        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL}
-        INTERNAL_API_BASE_URL: ${INTERNAL_API_BASE_URL}
-        NEXT_PUBLIC_DEFAULT_LAT: ${NEXT_PUBLIC_DEFAULT_LAT}
-        NEXT_PUBLIC_DEFAULT_LNG: ${NEXT_PUBLIC_DEFAULT_LNG}
-        NEXT_PUBLIC_DEFAULT_ZOOM: ${NEXT_PUBLIC_DEFAULT_ZOOM}
-        NEXT_PUBLIC_USE_MOCKS: ${NEXT_PUBLIC_USE_MOCKS}
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:13000}
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-/api/v1}
+        INTERNAL_API_BASE_URL: ${INTERNAL_API_BASE_URL:-http://web:8000/api/v1}
+        NEXT_PUBLIC_DEFAULT_LAT: ${NEXT_PUBLIC_DEFAULT_LAT:--33.4489}
+        NEXT_PUBLIC_DEFAULT_LNG: ${NEXT_PUBLIC_DEFAULT_LNG:--70.6693}
+        NEXT_PUBLIC_DEFAULT_ZOOM: ${NEXT_PUBLIC_DEFAULT_ZOOM:-11}
+        NEXT_PUBLIC_USE_MOCKS: ${NEXT_PUBLIC_USE_MOCKS:-false}
     container_name: elbigotes-frontend
+    restart: unless-stopped
     env_file:
       - .env
+    environment:
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-http://localhost:13000}
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-/api/v1}
+      INTERNAL_API_BASE_URL: ${INTERNAL_API_BASE_URL:-http://web:8000/api/v1}
+      NEXT_PUBLIC_DEFAULT_LAT: ${NEXT_PUBLIC_DEFAULT_LAT:--33.4489}
+      NEXT_PUBLIC_DEFAULT_LNG: ${NEXT_PUBLIC_DEFAULT_LNG:--70.6693}
+      NEXT_PUBLIC_DEFAULT_ZOOM: ${NEXT_PUBLIC_DEFAULT_ZOOM:-11}
+      NEXT_PUBLIC_USE_MOCKS: ${NEXT_PUBLIC_USE_MOCKS:-false}
     ports:
       - "${FRONTEND_HOST_BIND:-127.0.0.1}:${FRONTEND_HOST_PORT:-13000}:3000"
     depends_on:
       web:
-        condition: service_started
+        condition: service_healthy
 
   celery_worker:
     build:
       context: .
       dockerfile: compose/django/Dockerfile
     container_name: elbigotes-celery-worker
+    restart: unless-stopped
     env_file:
       - .env
     command: ["/app/scripts/start-celery-worker.sh"]
@@ -82,6 +107,7 @@ services:
       context: .
       dockerfile: compose/django/Dockerfile
     container_name: elbigotes-celery-beat
+    restart: unless-stopped
     env_file:
       - .env
     command: ["/app/scripts/start-celery-beat.sh"]

@@ -138,31 +138,31 @@ La ruta más rápida es restaurar la base local sobre el VPS.
 ### 7.1 Respaldar local
 
 ```bash
-docker compose exec -T db pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc > /tmp/elbigotes_local_places.dump
+docker compose exec -T db sh -lc 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc' > /tmp/elbigotes_local_places.dump
 ```
 
 ### 7.2 Copiar dump al VPS
 
 ```bash
-scp /tmp/elbigotes_local_places.dump deploy@server:/tmp/
+cat /tmp/elbigotes_local_places.dump | ssh deploy@TU_IP_O_HOST 'cat > /tmp/elbigotes_local_places.dump'
 ```
 
 ### 7.3 Respaldar la base actual del VPS
 
 ```bash
 cd ~/apps/elbigotes
-docker compose exec -T db pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc > /tmp/elbigotes_prod_backup.dump
+docker compose exec -T db sh -lc 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc' > /tmp/elbigotes_prod_backup.dump
 ```
 
 ### 7.4 Restaurar la base local en el VPS
 
 ```bash
-cat /tmp/elbigotes_local_places.dump | docker compose exec -T db pg_restore \
+cat /tmp/elbigotes_local_places.dump | docker compose exec -T db sh -lc 'pg_restore \
   --clean \
   --if-exists \
   --no-owner \
   -U "$POSTGRES_USER" \
-  -d "$POSTGRES_DB"
+  -d "$POSTGRES_DB"'
 ```
 
 ### 7.5 Aplicar migraciones y validar
@@ -196,3 +196,22 @@ Si necesitas mezclar la data nueva con una base productiva ya viva, no uses rest
 8. Backup local y backup VPS hechos
 9. Restore en VPS completado
 10. Home y categorías revisadas manualmente
+
+## 10. Operativa segura de Docker
+
+Para evitar apagar el stack por error:
+
+- usa `docker compose up -d` para levantar
+- usa `docker compose up -d --build web` para backend
+- usa `docker compose up -d --build frontend` para frontend
+- evita `docker compose down` salvo mantenimiento planificado
+
+Atajos del repo:
+
+```bash
+make up-detached
+make restart-web
+make restart-frontend
+make status
+make logs-app
+```
