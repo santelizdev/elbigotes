@@ -66,6 +66,18 @@ logging.basicConfig(
 )
 log = logging.getLogger("ingest")
 
+
+class IngestionBudgetExceeded(Exception):
+    """Base class for ingestion guardrails."""
+
+
+class RequestBudgetExceeded(IngestionBudgetExceeded):
+    """Raised when the max request budget is exceeded."""
+
+
+class RecordBudgetExceeded(IngestionBudgetExceeded):
+    """Raised when the max record budget is exceeded."""
+
 # ---------------------------------------------------------------------------
 # Configuración de búsqueda
 # ---------------------------------------------------------------------------
@@ -150,6 +162,7 @@ DETAIL_FIELDS = (
 @dataclass
 class PlacesClient:
     api_key: str
+    max_requests: int | None = None
     requests_made: int = 0
     _session: requests.Session = field(default_factory=requests.Session)
 
@@ -193,6 +206,10 @@ class PlacesClient:
         return resp.get("result", {})
 
     def _get(self, url: str, params: dict) -> dict:
+        if self.max_requests is not None and self.requests_made >= self.max_requests:
+            raise RequestBudgetExceeded(
+                f"Se alcanzó el máximo de {self.max_requests} requests a Google Places."
+            )
         self.requests_made += 1
         # Throttle: max ~10 req/seg para no saturar quota
         time.sleep(0.12)
@@ -356,12 +373,17 @@ def run_ingestion(
     regions: list[dict],
     dry_run: bool,
     fetch_details: bool,
+    max_records: int | None = None,
+    max_requests: int | None = None,
 ) -> None:
-    client = PlacesClient(api_key=api_key)
+    client = PlacesClient(api_key=api_key, max_requests=max_requests)
     source, dataset = get_or_create_source_and_dataset(dataset_slug)
 
     stats = {"created": 0, "updated": 0, "skipped": 0, "errors": 0}
     seen_place_ids: set[str] = set()
+    processed_records = 0
+    stopped_early = False
+    stop_reason = ""
 
     total_combinations = len(regions) * sum(len(q) for q in [CATEGORY_QUERIES[c] for c in categories if c in CATEGORY_QUERIES])
     log.info(
@@ -388,7 +410,12 @@ def run_ingestion(
                         place_id = result.get("place_id")
                         if not place_id or place_id in seen_place_ids:
                             continue
+                        if max_records is not None and processed_records >= max_records:
+                            raise RecordBudgetExceeded(
+                                f"Se alcanzó el máximo de {max_records} registros procesados."
+                            )
                         seen_place_ids.add(place_id)
+                        processed_records += 1
 
                         # Fetch details si se pidió (más info, más costo)
                         if fetch_details:
@@ -423,10 +450,19 @@ def run_ingestion(
                                 stats["created"], stats["updated"], stats["skipped"], client.requests_made,
                             )
 
+                except IngestionBudgetExceeded as exc:
+                    log.warning("%s", exc)
+                    stopped_early = True
+                    stop_reason = str(exc)
+                    break
                 except Exception as exc:
                     log.error("Error en %s/%s: %s", commune, keyword, exc)
                     stats["errors"] += 1
                     continue
+            if stopped_early:
+                break
+        if stopped_early:
+            break
 
     log.info("=" * 60)
     log.info("INGESTA COMPLETA%s", " [DRY RUN — nada fue guardado]" if dry_run else "")
@@ -434,7 +470,10 @@ def run_ingestion(
     log.info("  Actualizados:%d", stats["updated"])
     log.info("  Saltados:    %d", stats["skipped"])
     log.info("  Errores:     %d", stats["errors"])
+    log.info("  Procesados:  %d", processed_records)
     log.info("  API calls:   %d", client.requests_made)
+    if stopped_early:
+        log.info("  Corte seguro: %s", stop_reason)
     log.info(
         "  Costo estimado: ~$%.2f USD",
         client.requests_made * 0.032,  # Nearby Search pricing
@@ -505,6 +544,18 @@ Ejemplos:
         action="store_true",
         help="Hace una llamada extra a Place Details por cada lugar (más datos, ~2x más costo)",
     )
+    parser.add_argument(
+        "--max-records",
+        type=int,
+        default=None,
+        help="Corta la ingesta al procesar esta cantidad máxima de lugares únicos.",
+    )
+    parser.add_argument(
+        "--max-requests",
+        type=int,
+        default=None,
+        help="Corta la ingesta al alcanzar esta cantidad máxima de requests a Google.",
+    )
 
     args = parser.parse_args()
 
@@ -528,6 +579,8 @@ Ejemplos:
         regions=regions,
         dry_run=args.dry_run,
         fetch_details=args.fetch_details,
+        max_records=args.max_records,
+        max_requests=args.max_requests,
     )
 
 
