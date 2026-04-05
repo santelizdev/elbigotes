@@ -201,6 +201,78 @@ def test_build_place_from_record_parses_commune_from_formatted_address_without_d
 
 
 @pytest.mark.django_db
+def test_build_place_from_record_falls_back_to_target_commune_when_address_token_is_not_valid():
+    source = Source.objects.create(name="Google Places", slug="google-places", kind="api")
+    dataset = SourceDataset.objects.create(source=source, name="Coquimbo", slug="coquimbo-vets")
+    category = Category.objects.create(name="Veterinarias", slug="veterinarias", is_active=True)
+    Subcategory.objects.create(category=category, name="Consulta", slug="consulta", is_active=True)
+
+    record = ImportedPlaceRecord.objects.create(
+        dataset=dataset,
+        source=source,
+        external_id="place-la-serena-fallback",
+        raw_name="Veterinaria Costera",
+        raw_address="José Miguel Castillo, Región de Coquimbo, Chile",
+        raw_payload={
+            "google": {
+                "name": "Veterinaria Costera",
+                "formatted_address": "José Miguel Castillo, Región de Coquimbo, Chile",
+                "geometry": {"location": {"lat": -29.9, "lng": -71.25}},
+                "types": ["veterinary_care", "point_of_interest"],
+                "address_components": [],
+            },
+            "meta": {
+                "category_slug": "veterinaria",
+                "commune_target": "La Serena",
+                "region_target": "Región de Coquimbo",
+                "search_keyword": "veterinaria",
+            },
+        },
+    )
+
+    place, _contact_points = build_place_from_record(record, *load_taxonomy())
+
+    assert place is not None
+    assert place.commune == "La Serena"
+    assert place.region == "Región de Coquimbo"
+
+
+@pytest.mark.django_db
+def test_build_place_from_record_requires_coordinates_for_map_results():
+    source = Source.objects.create(name="Google Places", slug="google-places", kind="api")
+    dataset = SourceDataset.objects.create(source=source, name="RM", slug="rm-no-geo")
+    category = Category.objects.create(name="Veterinarias", slug="veterinarias", is_active=True)
+    Subcategory.objects.create(category=category, name="Consulta", slug="consulta", is_active=True)
+
+    record = ImportedPlaceRecord.objects.create(
+        dataset=dataset,
+        source=source,
+        external_id="place-no-geo",
+        raw_name="Veterinaria Sin Coordenadas",
+        raw_address="Providencia, Región Metropolitana, Chile",
+        raw_payload={
+            "google": {
+                "name": "Veterinaria Sin Coordenadas",
+                "formatted_address": "Providencia, Región Metropolitana, Chile",
+                "geometry": {"location": {}},
+                "types": ["veterinary_care", "point_of_interest"],
+            },
+            "meta": {
+                "category_slug": "veterinaria",
+                "commune_target": "Providencia",
+                "region_target": "Región Metropolitana",
+                "search_keyword": "veterinaria",
+            },
+        },
+    )
+
+    place, error = build_place_from_record(record, *load_taxonomy())
+
+    assert place is None
+    assert "coordenadas" in error
+
+
+@pytest.mark.django_db
 def test_promote_places_force_updates_existing_place_instead_of_recreating_it():
     source = Source.objects.create(name="Google Places", slug="google-places", kind="api")
     dataset = SourceDataset.objects.create(source=source, name="Bio Bio", slug="bio-bio-vets")

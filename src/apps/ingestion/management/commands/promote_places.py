@@ -21,6 +21,10 @@ Ubicación:
     (crear carpetas management/commands/ con __init__.py si no existen)
 """
 
+import ast
+import re
+from pathlib import Path
+
 from django.utils.text import slugify
 from django.contrib.gis.geos import Point
 from django.core.management.base import BaseCommand, CommandError
@@ -203,6 +207,29 @@ def _normalize_text(value: str) -> str:
     return slugify(value or "").replace("-", " ")
 
 
+def _load_known_communes() -> dict[str, str]:
+    constants_path = (
+        Path(__file__).resolve().parents[5]
+        / "frontend"
+        / "src"
+        / "lib"
+        / "constants"
+        / "chile-locations.ts"
+    )
+    if not constants_path.exists():
+        return {}
+
+    text = constants_path.read_text(encoding="utf-8")
+    aliases: dict[str, str] = {}
+
+    for match in re.finditer(r"communes:\s*\[(.*?)\]", text, re.S):
+        communes = ast.literal_eval(f"[{match.group(1)}]")
+        for commune in communes:
+            aliases.setdefault(_normalize_text(commune), commune)
+
+    return aliases
+
+
 REGION_ALIASES: dict[str, str] = {
     "arica y parinacota": "Región de Arica y Parinacota",
     "region de arica y parinacota": "Región de Arica y Parinacota",
@@ -245,12 +272,45 @@ REGION_ALIASES: dict[str, str] = {
     "region de magallanes y la antartica chilena": "Región de Magallanes y la Antártica Chilena",
 }
 
+KNOWN_COMMUNES = _load_known_communes()
+INVALID_COMMUNE_TOKENS = (
+    "avenida",
+    "av ",
+    "avda",
+    "calle",
+    "camino",
+    "pasaje",
+    "ruta",
+    "parque",
+    "plaza",
+    "condominio",
+    "edificio",
+    "torre",
+    "kilometro",
+    "km",
+    "sector",
+)
+
 
 def normalize_region_name(value: str) -> str:
     raw = (value or "").strip()
     if not raw:
         return ""
     return REGION_ALIASES.get(_normalize_text(raw), raw)
+
+
+def normalize_commune_name(value: str) -> str:
+    raw = (value or "").strip()
+    normalized = _normalize_text(raw)
+    if not raw or not normalized or normalized == "chile":
+        return ""
+    if any(char.isdigit() for char in raw):
+        return ""
+    if re.fullmatch(r"-?\d+(?:\.\d+)?", raw):
+        return ""
+    if any(token in normalized for token in INVALID_COMMUNE_TOKENS):
+        return ""
+    return KNOWN_COMMUNES.get(normalized, "")
 
 
 def parse_location_from_address(address: str) -> tuple[str, str]:
@@ -277,8 +337,9 @@ def parse_location_from_address(address: str) -> tuple[str, str]:
             region = canonical_region
             continue
 
-        if not commune:
-            commune = token
+        canonical_commune = normalize_commune_name(token)
+        if canonical_commune and not commune:
+            commune = canonical_commune
             break
 
     return commune, region
@@ -422,7 +483,9 @@ def build_place_from_record(
     location_data = google.get("geometry", {}).get("location", {})
     lat = location_data.get("lat")
     lng = location_data.get("lng")
-    point = Point(lng, lat, srid=4326) if (lat and lng) else None
+    if lat is None or lng is None:
+        return None, "Resultado sin coordenadas utiles para mapa"
+    point = Point(lng, lat, srid=4326)
 
     # --- Dirección ---
     address_comps = google.get("address_components", [])
