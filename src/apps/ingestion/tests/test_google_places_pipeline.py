@@ -159,3 +159,40 @@ def test_build_place_from_record_accepts_park_place():
 
     assert place is not None
     assert place.category.slug == "parques-pet-friendly"
+
+
+@pytest.mark.django_db
+def test_build_place_from_record_parses_commune_from_formatted_address_without_details():
+    source = Source.objects.create(name="Google Places", slug="google-places", kind="api")
+    dataset = SourceDataset.objects.create(source=source, name="Bio Bio", slug="bio-bio-vets")
+    category = Category.objects.create(name="Veterinarias", slug="veterinarias", is_active=True)
+    Subcategory.objects.create(category=category, name="Consulta", slug="consulta", is_active=True)
+
+    record = ImportedPlaceRecord.objects.create(
+        dataset=dataset,
+        source=source,
+        external_id="place-talcahuano",
+        raw_name="Clínica Costa Animal",
+        raw_address="Colón 2870, Talcahuano",
+        raw_payload={
+            "google": {
+                "name": "Clínica Costa Animal",
+                "formatted_address": "Colón 2870, Talcahuano",
+                "geometry": {"location": {"lat": -36.72, "lng": -73.11}},
+                "types": ["veterinary_care", "point_of_interest"],
+                "address_components": [],
+            },
+            "meta": {
+                "category_slug": "veterinaria",
+                "commune_target": "Concepción",
+                "region_target": "Región del Biobío",
+                "search_keyword": "veterinaria",
+            },
+        },
+    )
+
+    place, _contact_points = build_place_from_record(record, *load_taxonomy())
+
+    assert place is not None
+    assert place.commune == "Talcahuano"
+    assert place.region == "Región del Biobío"

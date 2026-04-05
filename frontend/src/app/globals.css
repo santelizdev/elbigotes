@@ -435,31 +435,36 @@ button {
 }
 
 .map-legend {
-  pointer-events: auto;
   display: flex;
   align-items: center;
   gap: 0.75rem;
   flex-wrap: wrap;
-  padding: 0.75rem 0.95rem;
-  border-radius: 999px;
-  background: rgba(10, 18, 24, 0.84);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 18px 36px rgba(7, 12, 17, 0.26);
+  justify-content: flex-end;
 }
 
 .map-legend__item {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  color: #ffffff;
+  gap: 0.5rem;
+  padding: 0.55rem 0.8rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--background-soft) 70%, var(--surface) 30%);
+  border: 1px solid var(--border);
+  color: var(--text);
   font-size: 0.84rem;
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
+  font-weight: 700;
 }
 
-.map-legend__dot {
-  width: 0.6rem;
-  height: 0.6rem;
-  border-radius: 999px;
+.map-legend__icon {
+  display: inline-grid;
+  place-items: center;
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+}
+
+.map-legend__label {
+  color: var(--text-soft);
 }
 
 .leaflet-shell {

@@ -3,11 +3,12 @@
 import { ChangeEvent } from "react";
 
 import { Button } from "@/components/ui/button";
-import { CHILE_REGIONS, getCommunesForRegion } from "@/lib/constants/chile-locations";
 
 interface ExplorerToolbarProps {
   region: string;
   commune: string;
+  availableRegions: string[];
+  availableCommunes: string[];
   radiusKm: number | null;
   hasUserLocation: boolean;
   locating: boolean;
@@ -23,6 +24,8 @@ interface ExplorerToolbarProps {
 export function ExplorerToolbar({
   region,
   commune,
+  availableRegions,
+  availableCommunes,
   radiusKm,
   hasUserLocation,
   locating,
@@ -34,7 +37,6 @@ export function ExplorerToolbar({
   onLocationToggle,
   onVerifiedChange,
 }: ExplorerToolbarProps) {
-  const communes = region ? getCommunesForRegion(region) : [];
   const helperMessage =
     locationMessage ??
     (hasUserLocation
@@ -54,9 +56,9 @@ export function ExplorerToolbar({
           onChange={(event: ChangeEvent<HTMLSelectElement>) => onRegionChange(event.target.value)}
         >
           <option value="">Todas las regiones</option>
-          {CHILE_REGIONS.map((item) => (
-            <option key={item.region} value={item.region}>
-              {item.region}
+          {availableRegions.map((item) => (
+            <option key={item} value={item}>
+              {item}
             </option>
           ))}
         </select>
@@ -70,7 +72,7 @@ export function ExplorerToolbar({
           disabled={!region}
         >
           <option value="">{region ? "Todas las comunas" : "Selecciona una region"}</option>
-          {communes.map((item) => (
+          {availableCommunes.map((item) => (
             <option key={item} value={item}>
               {item}
             </option>

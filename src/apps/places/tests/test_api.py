@@ -63,6 +63,47 @@ def test_places_list_returns_only_active_places_and_supports_commune_and_verifie
 
 
 @pytest.mark.django_db
+def test_places_list_supports_region_filter_with_partial_region_names():
+    client = APIClient()
+    source = Source.objects.create(name="Seed Manual", slug="seed-manual")
+    category = Category.objects.create(name="Veterinarias", slug="veterinarias")
+
+    Place.objects.create(
+        name="Vet Serena",
+        slug="vet-serena",
+        category=category,
+        source=source,
+        status="active",
+        commune="La Serena",
+        region="Región de Coquimbo",
+        formatted_address="La Serena, Región de Coquimbo, Chile",
+        summary="Atención general",
+    )
+    Place.objects.create(
+        name="Vet Conce",
+        slug="vet-conce",
+        category=category,
+        source=source,
+        status="active",
+        commune="Concepción",
+        region="Región del Biobío",
+        formatted_address="Concepción, Región del Biobío, Chile",
+        summary="Atención general",
+    )
+
+    response = client.get(
+        "/api/v1/places/",
+        {
+            "region": "Coquimbo",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.data["count"] == 1
+    assert response.data["results"][0]["slug"] == "vet-serena"
+
+
+@pytest.mark.django_db
 def test_places_list_supports_radius_queries_and_distance_annotations():
     client = APIClient()
     source = Source.objects.create(name="Seed Manual", slug="seed-manual")

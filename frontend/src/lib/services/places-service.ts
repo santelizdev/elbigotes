@@ -95,6 +95,9 @@ function filterMockPlaces(filters?: PlaceFilters) {
     if (filters?.category && place.category !== filters.category) {
       return false;
     }
+    if (filters?.region && !place.region.toLowerCase().includes(filters.region.toLowerCase())) {
+      return false;
+    }
     if (filters?.commune && place.commune.toLowerCase() !== filters.commune.toLowerCase()) {
       return false;
     }
@@ -141,6 +144,7 @@ export async function getPlaces(filters?: PlaceFilters): Promise<Place[]> {
       query: {
         category: filters?.category,
         search: filters?.search,
+        region: filters?.region,
         commune: filters?.commune,
         lat: filters?.lat,
         lng: filters?.lng,

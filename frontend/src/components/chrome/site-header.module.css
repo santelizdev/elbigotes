@@ -37,17 +37,6 @@
   display: grid;
   place-items: center;
   border-radius: 1.15rem;
-  background:
-    radial-gradient(
-      circle at top,
-      color-mix(in srgb, var(--accent-emerald) 35%, transparent),
-      transparent 60%
-    ),
-    linear-gradient(140deg, #173942, #123038);
-  border: 1px solid color-mix(in srgb, var(--accent-emerald) 20%, transparent);
-  box-shadow:
-    0 16px 32px rgba(7, 20, 25, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .logoImage {

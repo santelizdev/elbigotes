@@ -203,6 +203,87 @@ def _normalize_text(value: str) -> str:
     return slugify(value or "").replace("-", " ")
 
 
+REGION_ALIASES: dict[str, str] = {
+    "arica y parinacota": "Región de Arica y Parinacota",
+    "region de arica y parinacota": "Región de Arica y Parinacota",
+    "tarapaca": "Región de Tarapacá",
+    "region de tarapaca": "Región de Tarapacá",
+    "antofagasta": "Región de Antofagasta",
+    "region de antofagasta": "Región de Antofagasta",
+    "atacama": "Región de Atacama",
+    "region de atacama": "Región de Atacama",
+    "coquimbo": "Región de Coquimbo",
+    "region de coquimbo": "Región de Coquimbo",
+    "valparaiso": "Región de Valparaíso",
+    "region de valparaiso": "Región de Valparaíso",
+    "region metropolitana": "Región Metropolitana",
+    "region metropolitana de santiago": "Región Metropolitana",
+    "metropolitana de santiago": "Región Metropolitana",
+    "metropolitana": "Región Metropolitana",
+    "o higgins": "Región del Libertador O'Higgins",
+    "ohiggins": "Región del Libertador O'Higgins",
+    "libertador o higgins": "Región del Libertador O'Higgins",
+    "region del libertador o higgins": "Región del Libertador O'Higgins",
+    "region del libertador bernardo o higgins": "Región del Libertador O'Higgins",
+    "maule": "Región del Maule",
+    "region del maule": "Región del Maule",
+    "nuble": "Región de Ñuble",
+    "region de nuble": "Región de Ñuble",
+    "biobio": "Región del Biobío",
+    "region del biobio": "Región del Biobío",
+    "la araucania": "Región de La Araucanía",
+    "region de la araucania": "Región de La Araucanía",
+    "los rios": "Región de Los Ríos",
+    "region de los rios": "Región de Los Ríos",
+    "los lagos": "Región de Los Lagos",
+    "region de los lagos": "Región de Los Lagos",
+    "aysen": "Región de Aysén",
+    "region de aysen": "Región de Aysén",
+    "magallanes": "Región de Magallanes y la Antártica Chilena",
+    "magallanes y la antartica chilena": "Región de Magallanes y la Antártica Chilena",
+    "region de magallanes": "Región de Magallanes y la Antártica Chilena",
+    "region de magallanes y la antartica chilena": "Región de Magallanes y la Antártica Chilena",
+}
+
+
+def normalize_region_name(value: str) -> str:
+    raw = (value or "").strip()
+    if not raw:
+        return ""
+    return REGION_ALIASES.get(_normalize_text(raw), raw)
+
+
+def parse_location_from_address(address: str) -> tuple[str, str]:
+    """
+    Intenta inferir comuna y región desde formatted_address/vicinity sin requerir Place Details.
+    Ejemplos:
+      - "Av. Providencia 1234, Providencia, Región Metropolitana, Chile"
+      - "Colón 2870, Talcahuano"
+    """
+    tokens = [token.strip() for token in (address or "").split(",") if token.strip()]
+    if not tokens:
+        return "", ""
+
+    commune = ""
+    region = ""
+
+    for token in reversed(tokens):
+        normalized = _normalize_text(token)
+        if not normalized or normalized == "chile":
+            continue
+
+        canonical_region = REGION_ALIASES.get(normalized)
+        if canonical_region and not region:
+            region = canonical_region
+            continue
+
+        if not commune:
+            commune = token
+            break
+
+    return commune, region
+
+
 def is_record_relevant(record: ImportedPlaceRecord) -> tuple[bool, str]:
     google = record.raw_payload.get("google", {})
     meta = record.raw_payload.get("meta", {})
@@ -346,13 +427,16 @@ def build_place_from_record(
     # --- Dirección ---
     address_comps = google.get("address_components", [])
     formatted     = google.get("formatted_address", record.raw_address)
+    parsed_commune, parsed_region = parse_location_from_address(formatted)
     commune       = (
         extract_address_component(address_comps, "locality")
         or extract_address_component(address_comps, "administrative_area_level_3")
+        or parsed_commune
         or meta.get("commune_target", "")
     )
-    region = (
+    region = normalize_region_name(
         extract_address_component(address_comps, "administrative_area_level_1")
+        or parsed_region
         or meta.get("region_target", "")
     )
 
@@ -532,6 +616,7 @@ class Command(BaseCommand):
                         # Actualizar place existente
                         place.pk = existing.pk
                         place.slug = existing.slug
+                        place.status = existing.status
                         place.save()
                         ContactPoint.objects.filter(place=existing).delete()
                     else:

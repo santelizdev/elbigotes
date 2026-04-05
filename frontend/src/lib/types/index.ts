@@ -55,6 +55,7 @@ export interface LostPetReport {
 export interface PlaceFilters {
   category?: string;
   search?: string;
+  region?: string;
   commune?: string;
   lat?: number;
   lng?: number;

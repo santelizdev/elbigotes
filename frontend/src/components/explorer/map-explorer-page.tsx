@@ -34,7 +34,10 @@ export function MapExplorerPage({
   const {
     places: queriedPlaces,
     selectedCategory,
+    selectedRegion,
     selectedCommune,
+    availableRegions,
+    availableCommunes,
     radiusKm,
     hasUserLocation,
     locating,
@@ -46,15 +49,13 @@ export function MapExplorerPage({
     setRadiusKm,
     setShowOnlyVerified,
     updateCategory,
+    updateRegion,
     toggleUserLocation,
   } = usePlacesQuery({
     initialPlaces,
     initialCategory,
   });
-  const [selectedRegion, setSelectedRegion] = useState("");
-  const places = selectedRegion
-    ? queriedPlaces.filter((place) => place.region === selectedRegion)
-    : queriedPlaces;
+  const places = queriedPlaces;
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(initialPlaces[0] ?? null);
 
   useEffect(() => {
@@ -82,11 +83,6 @@ export function MapExplorerPage({
       };
     });
 
-  const handleRegionChange = (value: string) => {
-    setSelectedRegion(value);
-    setSelectedCommune("");
-  };
-
   return (
     <div className={styles.page}>
       <div className={styles.sectionIntro}>
@@ -102,12 +98,14 @@ export function MapExplorerPage({
       <ExplorerToolbar
         region={selectedRegion}
         commune={selectedCommune}
+        availableRegions={availableRegions}
+        availableCommunes={availableCommunes}
         radiusKm={radiusKm}
         hasUserLocation={hasUserLocation}
         locating={locating}
         locationMessage={locationMessage}
         showOnlyVerified={showOnlyVerified}
-        onRegionChange={handleRegionChange}
+        onRegionChange={updateRegion}
         onCommuneChange={setSelectedCommune}
         onRadiusChange={setRadiusKm}
         onLocationToggle={toggleUserLocation}
@@ -139,13 +137,6 @@ export function MapExplorerPage({
         </aside>
 
         <section className={styles.mapPanel}>
-          <div className={styles.mapOverlay}>
-            <div className={styles.mapChip}>
-              <strong>Mapa activo</strong>
-              <span className={styles.mapHint}>Explora puntos verificados por categoría</span>
-            </div>
-            <MapLegend categories={categories} />
-          </div>
           {points.length ? (
             <LeafletMap
               points={points}
@@ -162,6 +153,14 @@ export function MapExplorerPage({
               No hay puntos geolocalizados para mostrar en este mapa con los filtros actuales.
             </div>
           )}
+        </section>
+
+        <section className={styles.mapPanelMeta} aria-label="Contexto del mapa">
+          <div className={styles.mapChip}>
+            <strong>Mapa activo</strong>
+            <span className={styles.mapHint}>Explora puntos verificados por categoría</span>
+          </div>
+          <MapLegend categories={categories} />
         </section>
       </div>
 

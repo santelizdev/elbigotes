@@ -114,8 +114,8 @@ export function SiteHeader({ categories }: SiteHeaderProps) {
         <Link href="/" className={styles.brand}>
           <div className={styles.logoFrame}>
             <Image
-              src="/logo-placeholder.svg"
-              alt="Logo temporal de Elbigotes"
+              src="/icon-elbigotes.png"
+              alt="Logo de Elbigotes"
               width={52}
               height={52}
               className={styles.logoImage}
@@ -123,7 +123,7 @@ export function SiteHeader({ categories }: SiteHeaderProps) {
             />
           </div>
           <div className={styles.brandBlock}>
-            <span className={styles.brandTitle}>Elbigotes</span>
+            <span className={styles.brandTitle}>ElBigotes</span>
           </div>
         </Link>
 

@@ -11,10 +11,81 @@ interface UsePlacesQueryOptions {
   initialCategory?: string;
 }
 
+type GeolocationPermissionState = PermissionState | "unsupported" | "unknown";
+
+const GEOLOCATION_PERMISSION_DENIED = 1;
+const GEOLOCATION_POSITION_UNAVAILABLE = 2;
+const GEOLOCATION_TIMEOUT = 3;
+
+function getSortedUniqueValues(values: string[]) {
+  return [...new Set(values.filter(Boolean))].sort((left, right) => left.localeCompare(right, "es"));
+}
+
+function getGeolocationPermissionState(): Promise<GeolocationPermissionState> {
+  if (typeof navigator === "undefined" || !("permissions" in navigator)) {
+    return Promise.resolve("unsupported");
+  }
+
+  return navigator.permissions
+    .query({ name: "geolocation" as PermissionName })
+    .then((status) => status.state)
+    .catch(() => "unknown");
+}
+
+function getCurrentPosition(
+  options: PositionOptions,
+): Promise<GeolocationPosition> {
+  return new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(resolve, reject, options);
+  });
+}
+
+function isGeolocationError(error: unknown): error is Pick<GeolocationPositionError, "code"> {
+  return typeof error === "object" && error !== null && "code" in error;
+}
+
+function getLocationErrorMessage(error: Pick<GeolocationPositionError, "code">) {
+  switch (error.code) {
+    case GEOLOCATION_PERMISSION_DENIED:
+      return "Tu navegador o Safari tiene bloqueado el permiso de ubicación. Revísalo en Configuración del sitio o en Ajustes > Safari > Ubicación.";
+    case GEOLOCATION_POSITION_UNAVAILABLE:
+      return "No pudimos determinar tu ubicación exacta. Prueba moverte a un lugar con mejor señal o vuelve a intentarlo.";
+    case GEOLOCATION_TIMEOUT:
+      return "La ubicación tardó demasiado en responder. Intentaremos una versión menos precisa para no dejar el mapa bloqueado.";
+    default:
+      return "No pudimos obtener tu ubicación. Revisa los permisos del navegador e inténtalo otra vez.";
+  }
+}
+
+async function requestUserPosition() {
+  try {
+    return await getCurrentPosition({
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 300000,
+    });
+  } catch (error) {
+    if (
+      isGeolocationError(error) &&
+      error.code !== GEOLOCATION_PERMISSION_DENIED
+    ) {
+      return getCurrentPosition({
+        enableHighAccuracy: false,
+        timeout: 15000,
+        maximumAge: 600000,
+      });
+    }
+
+    throw error;
+  }
+}
+
 export function usePlacesQuery({ initialPlaces, initialCategory }: UsePlacesQueryOptions) {
   const [places, setPlaces] = useState(initialPlaces);
+  const [territoryPlaces, setTerritoryPlaces] = useState(initialPlaces);
   const [selectedCategory, setSelectedCategory] = useState(initialCategory ?? "");
   const [search, setSearch] = useState("");
+  const [selectedRegion, setSelectedRegion] = useState("");
   const [selectedCommune, setSelectedCommune] = useState("");
   const [radiusKm, setRadiusKm] = useState<number | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -31,6 +102,7 @@ export function usePlacesQuery({ initialPlaces, initialCategory }: UsePlacesQuer
     const filters: PlaceFilters = {
       category: selectedCategory || undefined,
       search: normalizedSearch.length >= 2 ? normalizedSearch : undefined,
+      region: selectedRegion || undefined,
       commune: selectedCommune || undefined,
       lat: radiusKm && userLocation ? userLocation.lat : undefined,
       lng: radiusKm && userLocation ? userLocation.lng : undefined,
@@ -59,6 +131,7 @@ export function usePlacesQuery({ initialPlaces, initialCategory }: UsePlacesQuer
             details: error.details,
             category: filters.category,
             search: filters.search,
+            region: filters.region,
             commune: filters.commune,
             radiusKm: filters.radiusKm,
             verifiedOnly: filters.verifiedOnly,
@@ -80,11 +153,81 @@ export function usePlacesQuery({ initialPlaces, initialCategory }: UsePlacesQuer
     return () => {
       active = false;
     };
-  }, [selectedCategory, deferredSearch, selectedCommune, radiusKm, userLocation, showOnlyVerified]);
+  }, [
+    selectedCategory,
+    deferredSearch,
+    selectedRegion,
+    selectedCommune,
+    radiusKm,
+    userLocation,
+    showOnlyVerified,
+  ]);
+
+  useEffect(() => {
+    let active = true;
+    const territoryFilters: PlaceFilters = {
+      category: selectedCategory || undefined,
+      verifiedOnly: showOnlyVerified,
+    };
+
+    getPlaces(territoryFilters)
+      .then((items) => {
+        if (!active) {
+          return;
+        }
+        setTerritoryPlaces(items);
+      })
+      .catch((error: unknown) => {
+        if (!active) {
+          return;
+        }
+
+        console.error("[usePlacesQuery] Failed to load territory filters", error);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [selectedCategory, showOnlyVerified]);
+
+  const availableRegions = getSortedUniqueValues(territoryPlaces.map((place) => place.region));
+  const availableCommunes = selectedRegion
+    ? getSortedUniqueValues(
+        territoryPlaces
+          .filter((place) => place.region === selectedRegion)
+          .map((place) => place.commune),
+      )
+    : [];
+
+  useEffect(() => {
+    if (selectedRegion && !availableRegions.includes(selectedRegion)) {
+      setSelectedRegion("");
+      setSelectedCommune("");
+      return;
+    }
+
+    if (selectedCommune && !availableCommunes.includes(selectedCommune)) {
+      setSelectedCommune("");
+    }
+  }, [
+    availableCommunes,
+    availableRegions,
+    selectedCommune,
+    selectedRegion,
+  ]);
 
   const updateCategory = (value: string) => {
     startTransition(() => {
       setSelectedCategory(value);
+      setSelectedRegion("");
+      setSelectedCommune("");
+    });
+  };
+
+  const updateRegion = (value: string) => {
+    startTransition(() => {
+      setSelectedRegion(value);
+      setSelectedCommune("");
     });
   };
 
@@ -101,11 +244,31 @@ export function usePlacesQuery({ initialPlaces, initialCategory }: UsePlacesQuer
       return;
     }
 
-    setLocating(true);
-    setLocationMessage(null);
+    if (typeof window !== "undefined" && !window.isSecureContext) {
+      setLocationMessage("La ubicación solo funciona en una conexión segura (HTTPS).");
+      return;
+    }
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
+    setLocating(true);
+    setLocationMessage("Solicitando acceso a tu ubicación...");
+
+    getGeolocationPermissionState()
+      .then((permissionState) => {
+        if (permissionState === "denied") {
+          setLocationMessage(
+            "El permiso de ubicación está bloqueado. En iPhone Safari debes permitirlo para este sitio y volver a intentarlo.",
+          );
+          setLocating(false);
+          return null;
+        }
+
+        return requestUserPosition();
+      })
+      .then((position) => {
+        if (!position) {
+          return;
+        }
+
         setUserLocation({
           lat: position.coords.latitude,
           lng: position.coords.longitude,
@@ -113,24 +276,27 @@ export function usePlacesQuery({ initialPlaces, initialCategory }: UsePlacesQuer
         setRadiusKm((currentRadius) => currentRadius ?? 5);
         setLocationMessage("Ubicación activada para filtrar por radio.");
         setLocating(false);
-      },
-      () => {
-        setLocationMessage("No pudimos obtener tu ubicación. Revisa los permisos del navegador.");
+      })
+      .catch((error: unknown) => {
+        if (isGeolocationError(error)) {
+          setLocationMessage(getLocationErrorMessage(error));
+        } else {
+          setLocationMessage(
+            "No pudimos obtener tu ubicación. Revisa los permisos del navegador e inténtalo otra vez.",
+          );
+        }
         setLocating(false);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 300000,
-      },
-    );
+      });
   };
 
   return {
     places,
     selectedCategory,
     search,
+    selectedRegion,
     selectedCommune,
+    availableRegions,
+    availableCommunes,
     radiusKm,
     hasUserLocation: Boolean(userLocation),
     locating,
@@ -143,6 +309,7 @@ export function usePlacesQuery({ initialPlaces, initialCategory }: UsePlacesQuer
     setRadiusKm,
     setShowOnlyVerified,
     updateCategory,
+    updateRegion,
     toggleUserLocation,
   };
 }
