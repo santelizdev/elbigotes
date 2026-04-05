@@ -102,6 +102,25 @@ CHILE_REGIONS: list[dict] = [
     {"name": "Región de Magallanes",            "commune": "Punta Arenas",   "lat": -53.1638, "lng": -70.9171},
 ]
 
+RM_TOP_COMMUNES: list[dict] = [
+    {"name": "Región Metropolitana", "commune": "Santiago", "lat": -33.4489, "lng": -70.6693},
+    {"name": "Región Metropolitana", "commune": "Las Condes", "lat": -33.4080, "lng": -70.5673},
+    {"name": "Región Metropolitana", "commune": "Providencia", "lat": -33.4310, "lng": -70.6180},
+    {"name": "Región Metropolitana", "commune": "Ñuñoa", "lat": -33.4569, "lng": -70.5979},
+    {"name": "Región Metropolitana", "commune": "Maipú", "lat": -33.5108, "lng": -70.7600},
+    {"name": "Región Metropolitana", "commune": "Puente Alto", "lat": -33.6117, "lng": -70.5758},
+    {"name": "Región Metropolitana", "commune": "La Florida", "lat": -33.5310, "lng": -70.5930},
+    {"name": "Región Metropolitana", "commune": "San Bernardo", "lat": -33.5924, "lng": -70.6996},
+    {"name": "Región Metropolitana", "commune": "Pudahuel", "lat": -33.4440, "lng": -70.7239},
+    {"name": "Región Metropolitana", "commune": "Quilicura", "lat": -33.3569, "lng": -70.7298},
+]
+
+SEARCH_SEEDS: list[dict] = CHILE_REGIONS + [
+    commune
+    for commune in RM_TOP_COMMUNES
+    if commune["commune"] != "Santiago"
+]
+
 # Mapeo de categoría interna → query terms para Google Places
 CATEGORY_QUERIES: dict[str, list[str]] = {
     "veterinaria": [
@@ -141,6 +160,15 @@ CATEGORY_QUERIES: dict[str, list[str]] = {
 # RM más amplio por densidad; resto estándar
 SEARCH_RADIUS_BY_COMMUNE: dict[str, int] = {
     "Santiago": 20_000,
+    "Las Condes": 12_000,
+    "Providencia": 10_000,
+    "Ñuñoa": 10_000,
+    "Maipú": 14_000,
+    "Puente Alto": 14_000,
+    "La Florida": 12_000,
+    "San Bernardo": 14_000,
+    "Pudahuel": 14_000,
+    "Quilicura": 14_000,
     "Valparaíso": 12_000,
     "Concepción": 12_000,
 }
@@ -494,7 +522,7 @@ def normalize_token(value: str) -> str:
     return " ".join(collapsed.strip().lower().split())
 
 
-AVAILABLE_REGIONS = [normalize_token(r["commune"]) for r in CHILE_REGIONS]
+AVAILABLE_REGIONS = [normalize_token(r["commune"]) for r in SEARCH_SEEDS]
 
 
 def main() -> None:
@@ -535,6 +563,11 @@ Ejemplos:
         help="Filtrar por comunas específicas (ej: santiago valparaiso). Por defecto: todas.",
     )
     parser.add_argument(
+        "--rm-top-communes",
+        action="store_true",
+        help="Usa un barrido por las 10 comunas prioritarias de Región Metropolitana.",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Simula la ingesta sin escribir en la base de datos",
@@ -560,10 +593,16 @@ Ejemplos:
     args = parser.parse_args()
 
     # Filtrar regiones si se especificaron comunas
-    regions = CHILE_REGIONS
-    if args.only_communes:
+    regions = SEARCH_SEEDS
+    if args.rm_top_communes:
+        regions = RM_TOP_COMMUNES
+        log.info(
+            "Usando preset RM top comunas: %s",
+            [region["commune"] for region in regions],
+        )
+    elif args.only_communes:
         filter_set = {normalize_token(c) for c in args.only_communes}
-        regions = [r for r in CHILE_REGIONS if normalize_token(r["commune"]) in filter_set]
+        regions = [r for r in SEARCH_SEEDS if normalize_token(r["commune"]) in filter_set]
         if not regions:
             log.error(
                 "Ninguna de las comunas especificadas coincide. Disponibles: %s",
