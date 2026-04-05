@@ -495,6 +495,40 @@ def build_place_from_record(
     return place, contact_points
 
 
+def update_existing_place(existing: Place, candidate: Place) -> Place:
+    """
+    Copia los campos importables de `candidate` sobre `existing` sin perder identidad
+    editorial ni referencias públicas como slug/status.
+    """
+    editable_fields = (
+        "name",
+        "summary",
+        "description",
+        "category",
+        "subcategory",
+        "location",
+        "street_address",
+        "commune",
+        "region",
+        "country",
+        "postal_code",
+        "formatted_address",
+        "website",
+        "metadata",
+        "is_verified",
+        "is_featured",
+        "is_emergency_service",
+        "is_open_24_7",
+        "source",
+        "owner_business_profile",
+    )
+
+    for field_name in editable_fields:
+        setattr(existing, field_name, getattr(candidate, field_name))
+
+    return existing
+
+
 class Command(BaseCommand):
     help = "Promueve ImportedPlaceRecord pendientes → Place"
 
@@ -613,12 +647,10 @@ class Command(BaseCommand):
             try:
                 with transaction.atomic():
                     if existing and force:
-                        # Actualizar place existente
-                        place.pk = existing.pk
-                        place.slug = existing.slug
-                        place.status = existing.status
+                        # Rehidrata la ficha existente sin romper su slug/status.
+                        place = update_existing_place(existing, place)
                         place.save()
-                        ContactPoint.objects.filter(place=existing).delete()
+                        ContactPoint.objects.filter(place=place).delete()
                     else:
                         place.save()
 

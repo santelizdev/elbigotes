@@ -1,4 +1,5 @@
 import pytest
+from django.core.management import call_command
 
 from apps.ingestion.management.commands.geocode_places import is_too_generic
 from apps.ingestion.management.commands.promote_places import (
@@ -6,6 +7,7 @@ from apps.ingestion.management.commands.promote_places import (
     load_taxonomy,
 )
 from apps.ingestion.models import ImportedPlaceRecord, Source, SourceDataset
+from apps.places.models import Place
 from apps.taxonomy.models import Category, Subcategory
 
 
@@ -196,3 +198,62 @@ def test_build_place_from_record_parses_commune_from_formatted_address_without_d
     assert place is not None
     assert place.commune == "Talcahuano"
     assert place.region == "Región del Biobío"
+
+
+@pytest.mark.django_db
+def test_promote_places_force_updates_existing_place_instead_of_recreating_it():
+    source = Source.objects.create(name="Google Places", slug="google-places", kind="api")
+    dataset = SourceDataset.objects.create(source=source, name="Bio Bio", slug="bio-bio-vets")
+    category = Category.objects.create(name="Veterinarias", slug="veterinarias", is_active=True)
+    Subcategory.objects.create(category=category, name="Consulta", slug="consulta", is_active=True)
+
+    existing_place = Place.objects.create(
+        name="Clínica Costa Animal",
+        slug="clinica-costa-animal",
+        category=category,
+        source=source,
+        status="active",
+        commune="Concepción",
+        region="Región del Biobío",
+        formatted_address="Concepción, Región del Biobío, Chile",
+        street_address="Concepción, Región del Biobío, Chile",
+        summary="Atención general",
+        metadata={"google_place_id": "place-talcahuano"},
+    )
+
+    record = ImportedPlaceRecord.objects.create(
+        dataset=dataset,
+        source=source,
+        external_id="place-talcahuano",
+        status="imported",
+        imported_place=existing_place,
+        raw_name="Clínica Costa Animal",
+        raw_address="Colón 2870, Talcahuano",
+        raw_payload={
+            "google": {
+                "name": "Clínica Costa Animal",
+                "formatted_address": "Colón 2870, Talcahuano",
+                "geometry": {"location": {"lat": -36.72, "lng": -73.11}},
+                "types": ["veterinary_care", "point_of_interest"],
+                "address_components": [],
+            },
+            "meta": {
+                "category_slug": "veterinaria",
+                "commune_target": "Concepción",
+                "region_target": "Región del Biobío",
+                "search_keyword": "veterinaria",
+            },
+        },
+    )
+
+    call_command("promote_places", dataset="bio-bio-vets", force=True)
+
+    existing_place.refresh_from_db()
+    record.refresh_from_db()
+
+    assert Place.objects.count() == 1
+    assert existing_place.id == record.imported_place_id
+    assert existing_place.slug == "clinica-costa-animal"
+    assert existing_place.status == "active"
+    assert existing_place.commune == "Talcahuano"
+    assert existing_place.formatted_address == "Colón 2870, Talcahuano"
