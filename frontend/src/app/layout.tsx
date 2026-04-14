@@ -46,13 +46,17 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
                 gtag('config', 'G-Q31EB1NWRV');
               `}
       </Script>
-      <script type="text/javascript">
-          (function(c,l,a,r,i,t,y){
-              c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-              t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-              y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-          })(window, document, "clarity", "script", "wbmwz86s1d");
-      </script>
+import Script from "next/script";
+
+<Script id="clarity" strategy="afterInteractive">
+{`
+(function(c,l,a,r,i,t,y){
+  c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+  t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+  y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+})(window, document, "clarity", "script", "wbmwz86s1d");
+`}
+</Script>
       </head>
       <body>
         {/* El layout deja el header persistente para reforzar orientación cuando el usuario navega entre mapa, categorías y publicación. */}
