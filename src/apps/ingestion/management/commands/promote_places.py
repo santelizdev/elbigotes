@@ -203,6 +203,12 @@ GOOGLE_TYPE_HINTS: dict[str, tuple[str, ...]] = {
 }
 
 
+def build_google_maps_url(place_id: str) -> str:
+    if not place_id:
+        return ""
+    return f"https://www.google.com/maps/place/?q=place_id:{place_id}"
+
+
 def _normalize_text(value: str) -> str:
     return slugify(value or "").replace("-", " ")
 
@@ -521,6 +527,9 @@ def build_place_from_record(
         is_featured      = False,
         is_emergency_service = category_slug_raw == "emergencia-veterinaria",
         is_open_24_7     = category_slug_raw == "emergencia-veterinaria",
+        google_rating    = google.get("rating"),
+        google_reviews_count = google.get("user_ratings_total", 0) or 0,
+        google_maps_url  = meta.get("google_maps_url", "") or build_google_maps_url(record.external_id),
         source           = record.source,
         metadata         = {
             "google_place_id":    record.external_id,
@@ -582,6 +591,9 @@ def update_existing_place(existing: Place, candidate: Place) -> Place:
         "is_featured",
         "is_emergency_service",
         "is_open_24_7",
+        "google_rating",
+        "google_reviews_count",
+        "google_maps_url",
         "source",
         "owner_business_profile",
     )

@@ -1,13 +1,15 @@
 import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 
+import { PlaceGoogleRating } from "@/components/places/place-google-rating";
 import styles from "@/components/places/place-list.module.css";
 import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingPanel } from "@/components/shared/loading-panel";
 import { StatusPill } from "@/components/ui/status-pill";
 import { Tag } from "@/components/ui/tag";
 import { Place } from "@/lib/types";
+import { getPlaceVerificationLabel, getPlaceVerificationTone } from "@/lib/utils/place-verification";
 import { formatDistance, titleCase } from "@/lib/utils/formatters";
-import { useEffect, useMemo, useState } from "react";
 
 interface PlaceListProps {
   places: Place[];
@@ -114,6 +116,7 @@ export function PlaceList({
 
   const featuredPlace =
     pagePlaces.find((place) => place.slug === selectedPlaceSlug) ?? pagePlaces[0] ?? null;
+  const featuredPlaceCanClaim = featuredPlace ? (featuredPlace.canClaim ?? !featuredPlace.isVerified) : false;
   const compactPlaces = pagePlaces.filter((place) => place.slug !== featuredPlace?.slug);
   const paginationItems = buildPagination(currentPage, totalPages);
 
@@ -128,10 +131,11 @@ export function PlaceList({
             </div>
             {featuredPlace.isEmergencyService ? (
               <StatusPill label="24/7" tone="critical" />
-            ) : featuredPlace.isVerified ? (
-              <StatusPill label="Verificado" tone="success" />
             ) : (
-              <StatusPill label="Pendiente" />
+              <StatusPill
+                label={getPlaceVerificationLabel(featuredPlace)}
+                tone={getPlaceVerificationTone(featuredPlace)}
+              />
             )}
           </div>
 
@@ -143,6 +147,11 @@ export function PlaceList({
           <p className={styles.featuredSummary}>
             {featuredPlace.description || featuredPlace.summary || "Ficha en construcción con datos básicos verificados."}
           </p>
+
+          <PlaceGoogleRating
+            rating={featuredPlace.googleRating}
+            reviewsCount={featuredPlace.googleReviewsCount}
+          />
 
           <div className="inline-tags">
             {featuredPlace.isOpen247 ? <Tag tone="warning">Abierto 24/7</Tag> : null}
@@ -168,7 +177,7 @@ export function PlaceList({
             <button className="text-button" onClick={() => onSelectPlace(featuredPlace)} type="button">
               Ver ficha rápida
             </button>
-            {!featuredPlace.isVerified ? (
+            {featuredPlaceCanClaim ? (
               <Link href={`/lugares/${featuredPlace.slug}/reclamar`} className={styles.featuredLink}>
                 Reclamar propiedad
               </Link>
@@ -200,6 +209,11 @@ export function PlaceList({
               <div className={styles.compactBody}>
                 <strong className={styles.compactTitle}>{place.name}</strong>
                 <span className={styles.compactAddress}>{place.formattedAddress}</span>
+                <PlaceGoogleRating
+                  rating={place.googleRating}
+                  reviewsCount={place.googleReviewsCount}
+                  compact
+                />
               </div>
             </button>
           ))}

@@ -64,6 +64,8 @@ def test_build_place_from_record_accepts_veterinary_place_by_google_type():
                 "name": "Centro Animal Norte",
                 "formatted_address": "Santiago, Chile",
                 "geometry": {"location": {"lat": -33.4, "lng": -70.6}},
+                "rating": 4.8,
+                "user_ratings_total": 128,
                 "types": ["veterinary_care", "point_of_interest"],
             },
             "meta": {
@@ -71,6 +73,7 @@ def test_build_place_from_record_accepts_veterinary_place_by_google_type():
                 "commune_target": "Santiago",
                 "region_target": "Región Metropolitana",
                 "search_keyword": "veterinaria",
+                "google_maps_url": "https://www.google.com/maps/place/?q=place_id:place-456",
             },
         },
     )
@@ -79,6 +82,9 @@ def test_build_place_from_record_accepts_veterinary_place_by_google_type():
 
     assert place is not None
     assert place.category.slug == "veterinarias"
+    assert str(place.google_rating) == "4.8"
+    assert place.google_reviews_count == 128
+    assert place.google_maps_url == "https://www.google.com/maps/place/?q=place_id:place-456"
     assert isinstance(contact_points, list)
 
 

@@ -38,6 +38,8 @@ export function MapExplorerPage({
     selectedCommune,
     availableRegions,
     availableCommunes,
+    totalPlacesCount,
+    selectedRegionPlacesCount,
     radiusKm,
     hasUserLocation,
     locating,
@@ -100,6 +102,8 @@ export function MapExplorerPage({
         commune={selectedCommune}
         availableRegions={availableRegions}
         availableCommunes={availableCommunes}
+        totalPlacesCount={totalPlacesCount}
+        selectedRegionPlacesCount={selectedRegionPlacesCount}
         radiusKm={radiusKm}
         hasUserLocation={hasUserLocation}
         locating={locating}

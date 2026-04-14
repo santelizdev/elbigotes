@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button";
 interface ExplorerToolbarProps {
   region: string;
   commune: string;
-  availableRegions: string[];
-  availableCommunes: string[];
+  availableRegions: Array<{ name: string; count: number }>;
+  availableCommunes: Array<{ name: string; count: number }>;
+  totalPlacesCount: number;
+  selectedRegionPlacesCount: number;
   radiusKm: number | null;
   hasUserLocation: boolean;
   locating: boolean;
@@ -26,6 +28,8 @@ export function ExplorerToolbar({
   commune,
   availableRegions,
   availableCommunes,
+  totalPlacesCount,
+  selectedRegionPlacesCount,
   radiusKm,
   hasUserLocation,
   locating,
@@ -55,10 +59,12 @@ export function ExplorerToolbar({
           value={region}
           onChange={(event: ChangeEvent<HTMLSelectElement>) => onRegionChange(event.target.value)}
         >
-          <option value="">Todas las regiones</option>
+          <option value="">
+            {`Todas las regiones (${totalPlacesCount.toLocaleString("es-CL")})`}
+          </option>
           {availableRegions.map((item) => (
-            <option key={item} value={item}>
-              {item}
+            <option key={item.name} value={item.name}>
+              {`${item.name} (${item.count.toLocaleString("es-CL")})`}
             </option>
           ))}
         </select>
@@ -71,10 +77,14 @@ export function ExplorerToolbar({
           onChange={(event: ChangeEvent<HTMLSelectElement>) => onCommuneChange(event.target.value)}
           disabled={!region}
         >
-          <option value="">{region ? "Todas las comunas" : "Selecciona una region"}</option>
+          <option value="">
+            {region
+              ? `Todas las comunas (${selectedRegionPlacesCount.toLocaleString("es-CL")})`
+              : "Selecciona una region"}
+          </option>
           {availableCommunes.map((item) => (
-            <option key={item} value={item}>
-              {item}
+            <option key={item.name} value={item.name}>
+              {`${item.name} (${item.count.toLocaleString("es-CL")})`}
             </option>
           ))}
         </select>

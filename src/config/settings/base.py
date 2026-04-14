@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "django_filters",
     "apps.core",
+    "apps.analytics",
     "apps.accounts",
     "apps.memberships",
     "apps.taxonomy",

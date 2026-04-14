@@ -20,6 +20,9 @@ export interface Place {
   region: string;
   country: string;
   isVerified: boolean;
+  verificationStatus?: string;
+  isPremiumVerified?: boolean;
+  canClaim?: boolean;
   isFeatured: boolean;
   isEmergencyService: boolean;
   isOpen247: boolean;
@@ -27,6 +30,8 @@ export interface Place {
   latitude: number | null;
   longitude: number | null;
   distanceKm?: number | null;
+  googleRating?: number | null;
+  googleReviewsCount: number;
   contactPoints: ContactPoint[];
   metadata?: Record<string, unknown>;
   source?: string | null;

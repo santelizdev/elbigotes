@@ -1,11 +1,14 @@
+import { PlaceGoogleRating } from "@/components/places/place-google-rating";
 import styles from "@/components/places/place-detail-sheet.module.css";
 import { Button } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
 import { Place } from "@/lib/types";
+import { getPlaceVerificationLabel, getPlaceVerificationTone } from "@/lib/utils/place-verification";
 import { titleCase } from "@/lib/utils/formatters";
 
 export function PlaceDetailSheet({ place }: { place: Place }) {
   const primaryContact = place.contactPoints.find((contact) => contact.isPrimary) ?? place.contactPoints[0];
+  const canClaim = place.canClaim ?? !place.isVerified;
 
   function getContactHref(kind: string, value: string) {
     if (kind === "website") {
@@ -26,16 +29,19 @@ export function PlaceDetailSheet({ place }: { place: Place }) {
         </div>
         {place.isEmergencyService ? (
           <StatusPill label="Emergencia" tone="critical" />
-        ) : place.isVerified ? (
-          <StatusPill label="Verificado" tone="success" />
         ) : (
-          <StatusPill label="Pendiente" />
+          <StatusPill
+            label={getPlaceVerificationLabel(place)}
+            tone={getPlaceVerificationTone(place)}
+          />
         )}
       </div>
 
       <p className={styles.description}>
         {place.description || place.summary || "Ficha en construcción con datos básicos verificados."}
       </p>
+
+      <PlaceGoogleRating rating={place.googleRating} reviewsCount={place.googleReviewsCount} />
 
       <div className={styles.grid}>
         <div className={styles.metaCard}>
@@ -66,7 +72,7 @@ export function PlaceDetailSheet({ place }: { place: Place }) {
             Contactar ahora
           </Button>
         ) : null}
-        {!place.isVerified ? (
+        {canClaim ? (
           <Button href={`/lugares/${place.slug}/reclamar`} variant="secondary">
             Reclamar propiedad
           </Button>

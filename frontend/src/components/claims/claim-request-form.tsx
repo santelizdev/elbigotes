@@ -9,14 +9,19 @@ import { Button } from "@/components/ui/button";
 import { createClaimRequest } from "@/lib/services/claims-service";
 import { getApiErrorMessage } from "@/lib/services/api-client";
 import { Place } from "@/lib/types";
+import { getPlaceVerificationLabel } from "@/lib/utils/place-verification";
 
 export function ClaimRequestForm({ place }: { place: Place }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const canClaim = place.canClaim ?? !place.isVerified;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!canClaim) {
+      return;
+    }
     const form = event.currentTarget;
     const formData = new FormData(form);
 
@@ -111,8 +116,12 @@ export function ClaimRequestForm({ place }: { place: Place }) {
               </div>
             </div>
 
-            <Button type="submit" disabled={loading}>
-              {loading ? "Enviando solicitud..." : "Enviar reclamo"}
+            <Button type="submit" disabled={loading || !canClaim}>
+              {loading
+                ? "Enviando solicitud..."
+                : !canClaim
+                  ? "Reclamo no disponible"
+                  : "Enviar reclamo"}
             </Button>
 
             {loading ? <LoadingPanel message="Registrando reclamo..." /> : null}
@@ -126,9 +135,9 @@ export function ClaimRequestForm({ place }: { place: Place }) {
             <h3>Ficha a reclamar</h3>
             <p>{place.formattedAddress}</p>
             <div className={styles.statusBox}>
-              {place.isVerified
-                ? "Esta ficha ya aparece como verificada."
-                : "Esta ficha todavía no está verificada y puede recibir reclamos de propiedad."}
+              {canClaim
+                ? "Esta ficha todavía no está verificada y puede recibir reclamos de propiedad."
+                : `Esta ficha figura como ${getPlaceVerificationLabel(place).toLowerCase()} y no está disponible para nuevos reclamos.`}
             </div>
           </section>
 

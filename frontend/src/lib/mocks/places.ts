@@ -21,6 +21,8 @@ export const mockPlaces: Place[] = [
     latitude: -33.4372,
     longitude: -70.6506,
     distanceKm: 1.9,
+    googleRating: 4.9,
+    googleReviewsCount: 328,
     contactPoints: [
       { label: "Urgencias", kind: "phone", value: "+56 2 2555 0000", isPrimary: true },
       { label: "WhatsApp", kind: "whatsapp", value: "+56 9 8123 4567", isPrimary: false },
@@ -45,6 +47,8 @@ export const mockPlaces: Place[] = [
     latitude: -33.3591,
     longitude: -70.7297,
     distanceKm: 13.4,
+    googleRating: 4.7,
+    googleReviewsCount: 96,
     contactPoints: [
       { label: "Coordinación", kind: "phone", value: "+56 9 7010 1199", isPrimary: true },
       { label: "Instagram", kind: "instagram", value: "@puentepeludo", isPrimary: false },
@@ -69,6 +73,8 @@ export const mockPlaces: Place[] = [
     latitude: -33.4254,
     longitude: -70.6113,
     distanceKm: 4.1,
+    googleRating: 4.6,
+    googleReviewsCount: 58,
     contactPoints: [],
     metadata: { openingHours: "06:00 - 22:00" },
     source: "seed-manual",
@@ -91,6 +97,8 @@ export const mockPlaces: Place[] = [
     latitude: -33.4569,
     longitude: -70.6032,
     distanceKm: 5.7,
+    googleRating: 4.8,
+    googleReviewsCount: 214,
     contactPoints: [
       { label: "Recepción", kind: "phone", value: "+56 2 2444 8877", isPrimary: true },
       { label: "Web", kind: "website", value: "example.com/clinica-vet-andes", isPrimary: false },
@@ -115,6 +123,8 @@ export const mockPlaces: Place[] = [
     latitude: -33.4419,
     longitude: -70.5535,
     distanceKm: 9.4,
+    googleRating: 4.5,
+    googleReviewsCount: 41,
     contactPoints: [
       { label: "Reservas", kind: "phone", value: "+56 9 6655 4400", isPrimary: true },
     ],
@@ -161,4 +171,3 @@ export const mockLostPetReports: LostPetReport[] = [
     createdAt: "2026-03-10T09:00:00-03:00",
   },
 ];
-

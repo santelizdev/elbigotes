@@ -5,6 +5,7 @@ import { siteConfig } from "@/lib/constants/site";
 
 interface ApiListResponse<T> {
   count?: number;
+  next?: string | null;
   results?: T[];
 }
 
@@ -20,6 +21,9 @@ interface PlaceApiResponse {
   region: string;
   country: string;
   is_verified: boolean;
+  verification_status?: string;
+  is_premium_verified?: boolean;
+  can_claim?: boolean;
   is_featured: boolean;
   is_emergency_service: boolean;
   is_open_24_7: boolean;
@@ -27,6 +31,8 @@ interface PlaceApiResponse {
   latitude: number;
   longitude: number;
   distance_km?: number | null;
+  google_rating?: number | string | null;
+  google_reviews_count?: number | null;
   contact_points: Array<{
     label: string;
     kind: string;
@@ -39,6 +45,11 @@ interface PlaceApiResponse {
 }
 
 function mapPlace(payload: PlaceApiResponse): Place {
+  const googleRatingValue =
+    payload.google_rating === null || payload.google_rating === undefined
+      ? null
+      : Number(payload.google_rating);
+
   return {
     name: payload.name,
     slug: payload.slug,
@@ -51,6 +62,9 @@ function mapPlace(payload: PlaceApiResponse): Place {
     region: payload.region,
     country: payload.country,
     isVerified: payload.is_verified,
+    verificationStatus: payload.verification_status ?? (payload.is_verified ? "verified" : "unverified"),
+    isPremiumVerified: payload.is_premium_verified ?? false,
+    canClaim: payload.can_claim ?? !payload.is_verified,
     isFeatured: payload.is_featured,
     isEmergencyService: payload.is_emergency_service,
     isOpen247: payload.is_open_24_7,
@@ -58,6 +72,8 @@ function mapPlace(payload: PlaceApiResponse): Place {
     latitude: payload.latitude,
     longitude: payload.longitude,
     distanceKm: payload.distance_km,
+    googleRating: Number.isFinite(googleRatingValue) ? googleRatingValue : null,
+    googleReviewsCount: payload.google_reviews_count ?? 0,
     contactPoints: payload.contact_points.map((contact) => ({
       label: contact.label,
       kind: contact.kind,
@@ -140,23 +156,52 @@ function filterMockPlaces(filters?: PlaceFilters) {
 
 export async function getPlaces(filters?: PlaceFilters): Promise<Place[]> {
   try {
-    const response = await apiRequest<ApiListResponse<PlaceApiResponse>>("/places/", {
+    const pageSize = 100;
+    const baseQuery = {
+      category: filters?.category,
+      search: filters?.search,
+      region: filters?.region,
+      commune: filters?.commune,
+      lat: filters?.lat,
+      lng: filters?.lng,
+      radius_km: filters?.radiusKm,
+      verified_only: filters?.verifiedOnly,
+      is_open_24_7: filters?.isOpen247,
+      is_emergency_service: filters?.isEmergencyService,
+      page_size: pageSize,
+    };
+
+    const firstPage = await apiRequest<ApiListResponse<PlaceApiResponse>>("/places/", {
       query: {
-        category: filters?.category,
-        search: filters?.search,
-        region: filters?.region,
-        commune: filters?.commune,
-        lat: filters?.lat,
-        lng: filters?.lng,
-        radius_km: filters?.radiusKm,
-        verified_only: filters?.verifiedOnly,
-        is_open_24_7: filters?.isOpen247,
-        is_emergency_service: filters?.isEmergencyService,
+        ...baseQuery,
       },
       cache: "no-store",
     });
 
-    const items = response.results ?? [];
+    const firstItems = firstPage.results ?? [];
+    const totalCount = firstPage.count ?? firstItems.length;
+
+    if (totalCount <= firstItems.length) {
+      return firstItems.map(mapPlace);
+    }
+
+    const totalPages = Math.ceil(totalCount / pageSize);
+    const remainingPages = await Promise.all(
+      Array.from({ length: totalPages - 1 }, (_, index) =>
+        apiRequest<ApiListResponse<PlaceApiResponse>>("/places/", {
+          query: {
+            ...baseQuery,
+            page: index + 2,
+          },
+          cache: "no-store",
+        }),
+      ),
+    );
+
+    const items = [
+      ...firstItems,
+      ...remainingPages.flatMap((page) => page.results ?? []),
+    ];
     return items.map(mapPlace);
   } catch (error) {
     if (!siteConfig.useMocks) {

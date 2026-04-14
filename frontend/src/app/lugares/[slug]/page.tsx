@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 
+import { PlaceViewTracker } from "@/components/analytics/place-view-tracker";
 import { PlaceProfile } from "@/components/places/place-profile";
 import { Button } from "@/components/ui/button";
 import { loadPlaceDetailData } from "@/lib/services/server-loaders";
@@ -49,5 +50,10 @@ export default async function PlaceDetailPage({ params }: PlaceDetailPageProps) 
     notFound();
   }
 
-  return <PlaceProfile place={place} />;
+  return (
+    <>
+      <PlaceViewTracker placeSlug={place.slug} />
+      <PlaceProfile place={place} />
+    </>
+  );
 }

@@ -7,10 +7,14 @@ import { SiteHeader } from "@/components/chrome/site-header";
 import { siteConfig } from "@/lib/constants/site";
 import { getPublicCategories } from "@/lib/services/taxonomy-service";
 
-export const metadata: Metadata = {
-  metadataBase: new URL(siteConfig.siteUrl),
-  title: siteConfig.defaultTitle,
-  description: siteConfig.description,
+
+export const metadata = {
+  metadataBase: new URL('https://www.elbigotes.cl'),
+  title: {
+    default: 'Elbigotes | Ecosistema pet en Chile',
+    template: '%s | Elbigotes',
+  },
+  description: 'Directorio geolocalizado de servicios para mascotas en Chile',
 };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
@@ -34,6 +38,21 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             })();
           `}
         </Script>
+        <Script id="ga4">
+              {`
+              window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', 'G-Q31EB1NWRV');
+              `}
+      </Script>
+      <script type="text/javascript">
+          (function(c,l,a,r,i,t,y){
+              c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+              t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+              y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+          })(window, document, "clarity", "script", "wbmwz86s1d");
+      </script>
       </head>
       <body>
         {/* El layout deja el header persistente para reforzar orientación cuando el usuario navega entre mapa, categorías y publicación. */}

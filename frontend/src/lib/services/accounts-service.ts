@@ -60,6 +60,9 @@ interface MembershipAssignmentSummary {
   starts_at: string;
   ends_at?: string | null;
   renews_at?: string | null;
+  access_tier?: string;
+  is_current?: boolean;
+  renewal_required?: boolean;
 }
 
 export interface AccountLoginPayload {

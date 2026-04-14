@@ -1,15 +1,29 @@
+import { PlaceGoogleRating } from "@/components/places/place-google-rating";
 import styles from "@/components/places/place-profile.module.css";
 import { LeafletMap } from "@/components/map/leaflet-map";
 import { Button } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
 import { Tag } from "@/components/ui/tag";
 import { Place } from "@/lib/types";
+import { getPlaceVerificationTone } from "@/lib/utils/place-verification";
 import { titleCase } from "@/lib/utils/formatters";
 
 export function PlaceProfile({ place }: { place: Place }) {
   const primaryContact =
     place.contactPoints.find((contact) => contact.isPrimary) ?? place.contactPoints[0];
   const hasMapPoint = place.latitude !== null && place.longitude !== null;
+  const canClaim = place.canClaim ?? !place.isVerified;
+  const verificationStatus =
+    place.verificationStatus ??
+    (place.isPremiumVerified ? "verified_premium" : place.isVerified ? "verified" : "unverified");
+  const verificationHeaderLabel =
+    verificationStatus === "verified_premium"
+      ? "Ficha verificada premium"
+      : verificationStatus === "verified"
+        ? "Ficha verificada"
+        : verificationStatus === "claim_requested"
+          ? "Ficha reclamada"
+          : "Ficha en revisión";
 
   function getContactHref(kind: string, value: string) {
     if (kind === "website") {
@@ -34,10 +48,11 @@ export function PlaceProfile({ place }: { place: Place }) {
           </div>
           {place.isEmergencyService ? (
             <StatusPill label="Emergencia 24/7" tone="critical" />
-          ) : place.isVerified ? (
-            <StatusPill label="Ficha verificada" tone="success" />
           ) : (
-            <StatusPill label="Ficha en revisión" />
+            <StatusPill
+              label={verificationHeaderLabel}
+              tone={getPlaceVerificationTone(place)}
+            />
           )}
         </div>
 
@@ -46,6 +61,8 @@ export function PlaceProfile({ place }: { place: Place }) {
           {place.subcategory ? <Tag>{titleCase(place.subcategory)}</Tag> : null}
           {place.isFeatured ? <Tag tone="accent">Destacado</Tag> : null}
         </div>
+
+        <PlaceGoogleRating rating={place.googleRating} reviewsCount={place.googleReviewsCount} />
       </section>
 
       <div className={styles.grid}>
@@ -113,7 +130,7 @@ export function PlaceProfile({ place }: { place: Place }) {
                 Contactar ahora
               </Button>
             ) : null}
-            {!place.isVerified ? (
+            {canClaim ? (
               <Button href={`/lugares/${place.slug}/reclamar`} variant="secondary">
                 Reclamar propiedad
               </Button>

@@ -2,7 +2,12 @@ from rest_framework import serializers
 
 from apps.claims.choices import ClaimRequestStatus
 from apps.claims.models import ClaimRequest
-from apps.places.choices import PlaceStatus
+from apps.places.choices import PlaceStatus, PlaceVerificationStatus
+from apps.places.services.verification import (
+    PLACE_EFFECTIVE_VERIFICATION_PREMIUM,
+    get_place_effective_verification_status,
+    mark_place_claim_requested,
+)
 
 
 class ClaimRequestSerializer(serializers.ModelSerializer):
@@ -45,15 +50,21 @@ class ClaimRequestCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         place = self.context["place"]
+        verification_status = get_place_effective_verification_status(place)
 
         if place.status != PlaceStatus.ACTIVE:
             raise serializers.ValidationError(
                 "Esta ficha todavía no está publicada para recibir reclamos."
             )
 
-        if place.is_verified:
+        if verification_status in {PlaceVerificationStatus.VERIFIED, PLACE_EFFECTIVE_VERIFICATION_PREMIUM}:
             raise serializers.ValidationError(
                 "Esta ficha ya está verificada. Si necesitas soporte, contáctanos directamente."
+            )
+
+        if verification_status == PlaceVerificationStatus.CLAIM_REQUESTED:
+            raise serializers.ValidationError(
+                "Esta ficha ya tiene una solicitud de propiedad en revisión."
             )
 
         existing_open_claim = ClaimRequest.objects.filter(
@@ -69,11 +80,13 @@ class ClaimRequestCreateSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
-        return ClaimRequest.objects.create(
+        claim = ClaimRequest.objects.create(
             place=self.context["place"],
             status=ClaimRequestStatus.PENDING,
             **validated_data,
         )
+        mark_place_claim_requested(claim.place)
+        return claim
 
     def to_representation(self, instance):
         return ClaimRequestSerializer(instance, context=self.context).data

@@ -1,7 +1,8 @@
 "use client";
 
-import { startTransition, useDeferredValue, useEffect, useState } from "react";
+import { startTransition, useDeferredValue, useEffect, useRef, useState } from "react";
 
+import { trackSearchEvent } from "@/lib/services/analytics-service";
 import { ApiRequestError, getApiErrorMessage } from "@/lib/services/api-client";
 import { Place, PlaceFilters } from "@/lib/types";
 import { getPlaces } from "@/lib/services/places-service";
@@ -17,8 +18,20 @@ const GEOLOCATION_PERMISSION_DENIED = 1;
 const GEOLOCATION_POSITION_UNAVAILABLE = 2;
 const GEOLOCATION_TIMEOUT = 3;
 
-function getSortedUniqueValues(values: string[]) {
-  return [...new Set(values.filter(Boolean))].sort((left, right) => left.localeCompare(right, "es"));
+function buildTerritoryOptions(values: string[]) {
+  const counts = values.reduce<Map<string, number>>((map, value) => {
+    const normalizedValue = value.trim();
+    if (!normalizedValue) {
+      return map;
+    }
+
+    map.set(normalizedValue, (map.get(normalizedValue) ?? 0) + 1);
+    return map;
+  }, new Map());
+
+  return [...counts.entries()]
+    .sort((left, right) => left[0].localeCompare(right[0], "es"))
+    .map(([name, count]) => ({ name, count }));
 }
 
 function getGeolocationPermissionState(): Promise<GeolocationPermissionState> {
@@ -95,6 +108,7 @@ export function usePlacesQuery({ initialPlaces, initialCategory }: UsePlacesQuer
   const [locationMessage, setLocationMessage] = useState<string | null>(null);
   const [locating, setLocating] = useState(false);
   const deferredSearch = useDeferredValue(search);
+  const lastTrackedSearchKeyRef = useRef<string>("");
 
   useEffect(() => {
     let active = true;
@@ -119,6 +133,27 @@ export function usePlacesQuery({ initialPlaces, initialCategory }: UsePlacesQuer
           return;
         }
         setPlaces(items);
+        if (typeof window !== "undefined") {
+          const trackingPayload = {
+            category_slug: filters.category,
+            search_term: filters.search,
+            region: filters.region,
+            commune: filters.commune,
+            has_user_location: Boolean(userLocation),
+            user_latitude: userLocation?.lat,
+            user_longitude: userLocation?.lng,
+            radius_km: filters.radiusKm,
+            verified_only: filters.verifiedOnly,
+            result_count: items.length,
+            path: `${window.location.pathname}${window.location.search}`,
+          };
+          const trackingKey = JSON.stringify(trackingPayload);
+
+          if (lastTrackedSearchKeyRef.current !== trackingKey) {
+            lastTrackedSearchKeyRef.current = trackingKey;
+            void trackSearchEvent(trackingPayload);
+          }
+        }
       })
       .catch((error: unknown) => {
         if (!active) {
@@ -190,28 +225,31 @@ export function usePlacesQuery({ initialPlaces, initialCategory }: UsePlacesQuer
     };
   }, [selectedCategory, showOnlyVerified]);
 
-  const availableRegions = getSortedUniqueValues(territoryPlaces.map((place) => place.region));
-  const availableCommunes = selectedRegion
-    ? getSortedUniqueValues(
-        territoryPlaces
-          .filter((place) => place.region === selectedRegion)
-          .map((place) => place.commune),
-      )
+  const availableRegions = buildTerritoryOptions(territoryPlaces.map((place) => place.region));
+  const regionNames = availableRegions.map((item) => item.name);
+  const selectedRegionPlaces = selectedRegion
+    ? territoryPlaces.filter((place) => place.region === selectedRegion)
     : [];
+  const availableCommunes = selectedRegion
+    ? buildTerritoryOptions(selectedRegionPlaces.map((place) => place.commune))
+    : [];
+  const communeNames = availableCommunes.map((item) => item.name);
 
   useEffect(() => {
-    if (selectedRegion && !availableRegions.includes(selectedRegion)) {
+    if (selectedRegion && !regionNames.includes(selectedRegion)) {
       setSelectedRegion("");
       setSelectedCommune("");
       return;
     }
 
-    if (selectedCommune && !availableCommunes.includes(selectedCommune)) {
+    if (selectedCommune && !communeNames.includes(selectedCommune)) {
       setSelectedCommune("");
     }
   }, [
     availableCommunes,
     availableRegions,
+    communeNames,
+    regionNames,
     selectedCommune,
     selectedRegion,
   ]);
@@ -297,6 +335,8 @@ export function usePlacesQuery({ initialPlaces, initialCategory }: UsePlacesQuer
     selectedCommune,
     availableRegions,
     availableCommunes,
+    totalPlacesCount: territoryPlaces.length,
+    selectedRegionPlacesCount: selectedRegionPlaces.length,
     radiusKm,
     hasUserLocation: Boolean(userLocation),
     locating,

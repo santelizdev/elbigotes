@@ -10,6 +10,10 @@ from apps.accounts.models import (
     UserRole,
 )
 from apps.ingestion.models import Source, SourceKind
+from apps.memberships.services import (
+    assign_default_business_membership,
+    assign_default_pet_owner_membership,
+)
 from apps.places.choices import ContactPointKind, PlaceStatus
 from apps.places.models import ContactPoint, Place
 from apps.taxonomy.models import Category
@@ -147,6 +151,7 @@ def register_business_account(validated_data):
     place = _build_primary_place_for_business(profile, profile_data, user)
     profile.place = place
     profile.save(update_fields=["place", "updated_at"])
+    assign_default_business_membership(profile)
     return user, profile
 
 
@@ -222,4 +227,5 @@ def register_pet_owner_account(validated_data):
     )
     profile = PetOwnerProfile.objects.create(user=user, **validated_data["profile"])
     pet = PetProfile.objects.create(owner=profile, **initial_pet)
+    assign_default_pet_owner_membership(profile)
     return user, profile, pet

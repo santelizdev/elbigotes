@@ -59,6 +59,48 @@ def test_register_business_account_creates_profile_and_primary_place():
     assert profile.place.category.slug == "veterinarias"
     assert profile.place.status == "draft"
     assert profile.place.owner_business_profile == profile
+    membership = MembershipAssignment.objects.get(owner_object_id=profile.id)
+    assert membership.plan.slug == "business-trial"
+    assert membership.status == MembershipAssignmentStatus.TRIAL
+    assert membership.ends_at is not None
+    assert membership.renews_at is not None
+    assert response.data["profile"]["memberships"][0]["plan_slug"] == "business-trial"
+    assert response.data["profile"]["memberships"][0]["access_tier"] == "business_trial"
+
+
+@pytest.mark.django_db
+def test_register_non_billable_business_assigns_lifetime_free_membership():
+    client = APIClient()
+    Category.objects.create(name="Refugios", slug="refugios-albergues")
+
+    response = client.post(
+        "/api/v1/accounts/register/business/",
+        data={
+            "email": "refugio@example.com",
+            "password": "Password123!",
+            "first_name": "Paula",
+            "last_name": "Rojas",
+            "business_name": "Refugio Esperanza",
+            "business_kind": BusinessKind.SHELTER,
+            "phone": "+56911111111",
+            "commune": "Providencia",
+            "region": "Región Metropolitana",
+            "place_label": "Punto confirmado en mapa",
+            "latitude": -33.4257,
+            "longitude": -70.6175,
+            "marketing_opt_in": True,
+        },
+        format="json",
+    )
+
+    assert response.status_code == 201
+    profile = BusinessProfile.objects.get(user__email="refugio@example.com")
+    membership = MembershipAssignment.objects.get(owner_object_id=profile.id)
+
+    assert membership.plan.slug == "business-free-lifetime"
+    assert membership.status == MembershipAssignmentStatus.ACTIVE
+    assert membership.ends_at is None
+    assert response.data["profile"]["memberships"][0]["access_tier"] == "business_free_lifetime"
 
 
 @pytest.mark.django_db
@@ -95,6 +137,10 @@ def test_register_pet_owner_account_creates_profile_and_initial_pet():
     assert user.role == UserRole.PET_OWNER
     assert pet.name == "Luna"
     assert pet.species == "dog"
+    membership = MembershipAssignment.objects.get(owner_object_id=profile.id)
+    assert membership.plan.slug == "pet-owner-free"
+    assert membership.status == MembershipAssignmentStatus.ACTIVE
+    assert response.data["profile"]["memberships"][0]["plan_slug"] == "pet-owner-free"
 
 
 @pytest.mark.django_db
@@ -139,6 +185,7 @@ def test_business_login_workspace_update_and_branch_creation():
     assert workspace_response.status_code == 200
     assert workspace_response.data["profile"]["business_name"] == "Vet Norte"
     assert len(workspace_response.data["places"]) == 1
+    assert workspace_response.data["profile"]["memberships"][0]["plan_slug"] == "business-trial"
 
     update_response = auth_client.patch(
         "/api/v1/accounts/me/business/",
@@ -198,6 +245,76 @@ def test_business_workspace_requires_authenticated_business_owner():
     forbidden_response = client.get("/api/v1/accounts/me/business/")
 
     assert forbidden_response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_business_workspace_backfills_default_membership_for_legacy_profile():
+    client = APIClient()
+    user = User.objects.create_user(
+        email="legacy-biz@example.com",
+        password="Password123!",
+        role=UserRole.BUSINESS_OWNER,
+    )
+    profile = BusinessProfile.objects.create(
+        user=user,
+        business_name="Veterinaria Histórica",
+        business_kind=BusinessKind.VETERINARY,
+        phone="+56944445555",
+        commune="Providencia",
+        region="Región Metropolitana",
+    )
+    token = create_access_token(user)
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+
+    response = client.get("/api/v1/accounts/me/business/")
+
+    assert response.status_code == 200
+    profile.refresh_from_db()
+    membership = MembershipAssignment.objects.get(owner_object_id=profile.id)
+    assert membership.plan.slug == "business-trial"
+    assert response.data["profile"]["memberships"][0]["access_tier"] == "business_trial"
+
+
+@pytest.mark.django_db
+def test_business_workspace_marks_expired_trial_membership():
+    client = APIClient()
+    user = User.objects.create_user(
+        email="expired-biz@example.com",
+        password="Password123!",
+        role=UserRole.BUSINESS_OWNER,
+    )
+    profile = BusinessProfile.objects.create(
+        user=user,
+        business_name="Veterinaria Expirada",
+        business_kind=BusinessKind.VETERINARY,
+        phone="+56944445555",
+        commune="Providencia",
+        region="Región Metropolitana",
+    )
+    plan = MembershipPlan.objects.create(
+        name="Trial Manual",
+        slug="trial-manual",
+        audience=MembershipAudience.BUSINESS,
+        billing_interval=MembershipBillingInterval.MONTHLY,
+        price_amount=0,
+        metadata={"lifecycle": "business_trial"},
+    )
+    MembershipAssignment.objects.create(
+        plan=plan,
+        owner=profile,
+        status=MembershipAssignmentStatus.TRIAL,
+        starts_at=timezone.now() - timedelta(days=45),
+        ends_at=timezone.now() - timedelta(days=15),
+        renews_at=timezone.now() - timedelta(days=15),
+    )
+    token = create_access_token(user)
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+
+    response = client.get("/api/v1/accounts/me/business/")
+
+    assert response.status_code == 200
+    assert response.data["profile"]["memberships"][0]["status"] == "expired"
+    assert response.data["profile"]["memberships"][0]["renewal_required"] is True
 
 
 @pytest.mark.django_db

@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.contrib.gis.admin import GISModelAdmin
 
 from apps.ingestion.tasks import audit_places_consistency, geocode_place
+from apps.places.choices import PlaceVerificationStatus
 from apps.places.models import ContactPoint, DuplicatePlaceCandidate, Place, PlaceQualityIssue
 
 
@@ -21,6 +22,7 @@ class PlaceAdmin(GISModelAdmin):
         "commune",
         "region",
         "status",
+        "verification_status",
         "is_verified",
         "is_open_24_7",
     )
@@ -28,6 +30,7 @@ class PlaceAdmin(GISModelAdmin):
         "status",
         "category",
         "subcategory",
+        "verification_status",
         "is_verified",
         "is_open_24_7",
         "is_emergency_service",
@@ -42,6 +45,8 @@ class PlaceAdmin(GISModelAdmin):
         "mark_as_active",
         "mark_as_archived",
         "mark_as_verified",
+        "mark_as_claim_requested",
+        "mark_as_unverified",
         "queue_geocoding",
         "queue_quality_audit",
     )
@@ -56,7 +61,24 @@ class PlaceAdmin(GISModelAdmin):
 
     @admin.action(description="Marcar seleccionados como verificados")
     def mark_as_verified(self, request, queryset):
-        queryset.update(is_verified=True)
+        queryset.update(
+            verification_status=PlaceVerificationStatus.VERIFIED,
+            is_verified=True,
+        )
+
+    @admin.action(description="Marcar seleccionados con reclamo en revisión")
+    def mark_as_claim_requested(self, request, queryset):
+        queryset.update(
+            verification_status=PlaceVerificationStatus.CLAIM_REQUESTED,
+            is_verified=False,
+        )
+
+    @admin.action(description="Marcar seleccionados como no verificados")
+    def mark_as_unverified(self, request, queryset):
+        queryset.update(
+            verification_status=PlaceVerificationStatus.UNVERIFIED,
+            is_verified=False,
+        )
 
     @admin.action(description="Encolar geocodificación")
     def queue_geocoding(self, request, queryset):

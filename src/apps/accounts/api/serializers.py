@@ -19,6 +19,11 @@ from apps.accounts.tokens import create_access_token
 from apps.lost_pets.api.serializers import LostPetReportListSerializer
 from apps.lost_pets.models import LostPetReport
 from apps.memberships.models import MembershipAssignment
+from apps.memberships.services import (
+    get_membership_access_tier,
+    is_membership_current,
+    is_membership_renewal_required,
+)
 from apps.places.models import Place
 from apps.taxonomy.models import Category
 
@@ -33,6 +38,9 @@ class MembershipAssignmentSummarySerializer(serializers.ModelSerializer):
     plan_name = serializers.CharField(source="plan.name", read_only=True)
     plan_slug = serializers.CharField(source="plan.slug", read_only=True)
     audience = serializers.CharField(source="plan.audience", read_only=True)
+    access_tier = serializers.SerializerMethodField()
+    is_current = serializers.SerializerMethodField()
+    renewal_required = serializers.SerializerMethodField()
 
     class Meta:
         model = MembershipAssignment
@@ -45,7 +53,19 @@ class MembershipAssignmentSummarySerializer(serializers.ModelSerializer):
             "starts_at",
             "ends_at",
             "renews_at",
+            "access_tier",
+            "is_current",
+            "renewal_required",
         )
+
+    def get_access_tier(self, obj):
+        return get_membership_access_tier(obj)
+
+    def get_is_current(self, obj):
+        return is_membership_current(obj)
+
+    def get_renewal_required(self, obj):
+        return is_membership_renewal_required(obj)
 
 
 class BusinessProfileSerializer(serializers.ModelSerializer):

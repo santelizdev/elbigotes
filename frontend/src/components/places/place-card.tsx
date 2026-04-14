@@ -1,9 +1,11 @@
 import Link from "next/link";
 
+import { PlaceGoogleRating } from "@/components/places/place-google-rating";
 import styles from "@/components/places/place-card.module.css";
 import { StatusPill } from "@/components/ui/status-pill";
 import { Tag } from "@/components/ui/tag";
 import { Place } from "@/lib/types";
+import { getPlaceVerificationLabel, getPlaceVerificationTone } from "@/lib/utils/place-verification";
 import { formatDistance, titleCase } from "@/lib/utils/formatters";
 
 interface PlaceCardProps {
@@ -33,10 +35,11 @@ export function PlaceCard({ place, active = false, onSelect }: PlaceCardProps) {
         </div>
         {place.isEmergencyService ? (
           <StatusPill label="24/7" tone="critical" />
-        ) : place.isVerified ? (
-          <StatusPill label="Verificado" tone="success" />
         ) : (
-          <StatusPill label="Pendiente" />
+          <StatusPill
+            label={getPlaceVerificationLabel(place)}
+            tone={getPlaceVerificationTone(place)}
+          />
         )}
       </div>
 
@@ -46,6 +49,12 @@ export function PlaceCard({ place, active = false, onSelect }: PlaceCardProps) {
       </div>
 
       <p className={styles.summary}>{place.summary}</p>
+
+      <PlaceGoogleRating
+        rating={place.googleRating}
+        reviewsCount={place.googleReviewsCount}
+        compact
+      />
 
       <div className="inline-tags">
         {place.isOpen247 ? <Tag tone="warning">Abierto 24/7</Tag> : null}

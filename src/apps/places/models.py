@@ -2,6 +2,7 @@ from django.conf import settings
 from django.contrib.gis.db import models as gis_models
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.utils import timezone
 
 from apps.core.models import TimeStampedModel
@@ -12,6 +13,7 @@ from apps.places.choices import (
     DataIssueSeverity,
     DuplicateCandidateStatus,
     PlaceStatus,
+    PlaceVerificationStatus,
 )
 from apps.taxonomy.models import Category, Subcategory
 
@@ -44,10 +46,24 @@ class Place(TimeStampedModel):
     formatted_address = models.CharField(max_length=255, blank=True)
     website = models.URLField(blank=True)
     metadata = models.JSONField(default=dict, blank=True)
+    verification_status = models.CharField(
+        max_length=24,
+        choices=PlaceVerificationStatus.choices,
+        default=PlaceVerificationStatus.UNVERIFIED,
+    )
     is_verified = models.BooleanField(default=False)
     is_featured = models.BooleanField(default=False)
     is_emergency_service = models.BooleanField(default=False)
     is_open_24_7 = models.BooleanField(default=False)
+    google_rating = models.DecimalField(
+        max_digits=2,
+        decimal_places=1,
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(0), MaxValueValidator(5)],
+    )
+    google_reviews_count = models.PositiveIntegerField(default=0)
+    google_maps_url = models.URLField(blank=True)
     quality_score = models.PositiveSmallIntegerField(default=0)
     last_quality_check_at = models.DateTimeField(null=True, blank=True)
     source = models.ForeignKey(
@@ -110,6 +126,14 @@ class Place(TimeStampedModel):
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = generate_unique_slug(self, self.name)
+
+        if self.verification_status == PlaceVerificationStatus.UNVERIFIED and self.is_verified:
+            self.verification_status = PlaceVerificationStatus.VERIFIED
+        elif self.verification_status == PlaceVerificationStatus.VERIFIED:
+            self.is_verified = True
+        else:
+            self.is_verified = False
+
         self.full_clean()
         super().save(*args, **kwargs)
 

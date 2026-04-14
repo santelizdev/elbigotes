@@ -15,6 +15,23 @@ import {
 } from "@/lib/services/accounts-service";
 import { getApiErrorMessage } from "@/lib/services/api-client";
 
+function formatDateLabel(value?: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+
+  return new Intl.DateTimeFormat("es-CL", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(parsed);
+}
+
 export function BusinessDashboard() {
   const [workspace, setWorkspace] = useState<BusinessWorkspaceResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -70,6 +87,37 @@ export function BusinessDashboard() {
     workspace.profile.memberships.find((membership) => membership.status === "active") ??
     workspace.profile.memberships.find((membership) => membership.status === "trial") ??
     workspace.profile.memberships[0];
+  const membershipEndsAtLabel = formatDateLabel(currentMembership?.ends_at);
+  const membershipRenewsAtLabel = formatDateLabel(currentMembership?.renews_at);
+  const membershipHeadline =
+    currentMembership?.access_tier === "business_free_lifetime"
+      ? "Gratuita permanente"
+      : currentMembership?.access_tier === "business_trial"
+        ? currentMembership.status === "expired"
+          ? "Renovación requerida"
+          : "Prueba comercial"
+        : currentMembership?.access_tier === "business_paid"
+          ? currentMembership.status === "past_due"
+            ? "Pago pendiente"
+            : "Plan comercial"
+          : currentMembership?.plan_name ?? "Sin membresía asignada";
+  const membershipCopy = !currentMembership
+    ? "Este perfil todavía no tiene una asignación de membresía activa."
+    : currentMembership.access_tier === "business_free_lifetime"
+      ? "Esta categoría quedó con acceso comercial permanente y no requiere renovación periódica."
+      : currentMembership.access_tier === "business_trial"
+        ? currentMembership.status === "expired"
+          ? "El periodo gratuito ya venció. Esta cuenta necesita renovación para recuperar estado comercial activo."
+          : membershipEndsAtLabel
+            ? `Tu periodo gratuito vence el ${membershipEndsAtLabel}. Antes de esa fecha debemos definir su renovación.`
+            : "Esta cuenta está operando con un periodo gratuito inicial de 30 días."
+        : currentMembership.access_tier === "business_paid"
+          ? currentMembership.status === "past_due"
+            ? "La membresía quedó con cobro pendiente. Conviene regularizarla para mantener el negocio activo."
+            : membershipRenewsAtLabel
+              ? `Tu siguiente renovación comercial está planificada para el ${membershipRenewsAtLabel}.`
+              : "La membresía comercial está activa para esta cuenta."
+          : `Estado actual: ${currentMembership.status}.`;
 
   return (
     <div className={styles.page}>
@@ -93,12 +141,8 @@ export function BusinessDashboard() {
       <section className={styles.cards}>
         <article className={styles.card}>
           <p className="eyebrow">Membresía</p>
-          <h3>{currentMembership?.plan_name ?? "Sin membresía asignada"}</h3>
-          <p>
-            {currentMembership
-              ? `Estado actual: ${currentMembership.status}.`
-              : "Este perfil todavía no tiene una asignación de membresía activa."}
-          </p>
+          <h3>{membershipHeadline}</h3>
+          <p>{membershipCopy}</p>
         </article>
 
         <article className={styles.card}>

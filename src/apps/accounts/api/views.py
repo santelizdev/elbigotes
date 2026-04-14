@@ -15,6 +15,7 @@ from apps.accounts.api.serializers import (
     RegistrationCatalogSerializer,
     build_registration_catalog,
 )
+from apps.memberships.services import ensure_default_membership_for_owner, sync_memberships_for_owner
 
 
 class BusinessRegistrationView(generics.CreateAPIView):
@@ -50,6 +51,8 @@ class BusinessWorkspaceView(APIView):
 
     def get(self, request, *args, **kwargs):
         profile = request.user.business_profile
+        ensure_default_membership_for_owner(profile)
+        sync_memberships_for_owner(profile)
         serializer = BusinessWorkspaceSerializer({"user": request.user, "profile": profile})
         return Response(serializer.data)
 
@@ -67,6 +70,8 @@ class PetOwnerWorkspaceView(APIView):
 
     def get(self, request, *args, **kwargs):
         profile = request.user.pet_owner_profile
+        ensure_default_membership_for_owner(profile)
+        sync_memberships_for_owner(profile)
         serializer = PetOwnerWorkspaceSerializer(
             {"user": request.user, "profile": profile},
             context={"request": request},

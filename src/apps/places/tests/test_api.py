@@ -1,8 +1,11 @@
 import pytest
 from django.contrib.gis.geos import Point
+from django.utils import timezone
 from rest_framework.test import APIClient
 
+from apps.accounts.models import BusinessKind, BusinessProfile, User, UserRole
 from apps.ingestion.models import Source
+from apps.memberships.models import MembershipAssignment, MembershipAssignmentStatus, MembershipPlan
 from apps.places.models import Place
 from apps.taxonomy.models import Category
 
@@ -166,6 +169,8 @@ def test_place_detail_returns_public_metadata_and_source():
         summary="Cuidado diario",
         description="Detalle operativo de la guardería.",
         metadata={"review_status": "ready"},
+        google_rating="4.8",
+        google_reviews_count=128,
     )
 
     response = client.get(f"/api/v1/places/{place.slug}/")
@@ -173,4 +178,124 @@ def test_place_detail_returns_public_metadata_and_source():
     assert response.status_code == 200
     assert response.data["slug"] == "guarderia-centro"
     assert response.data["source"] == "seed-manual"
+    assert response.data["google_rating"] == 4.8
+    assert response.data["google_reviews_count"] == 128
     assert response.data["metadata"]["review_status"] == "ready"
+    assert response.data["verification_status"] == "unverified"
+    assert response.data["is_premium_verified"] is False
+    assert response.data["can_claim"] is True
+
+
+@pytest.mark.django_db
+def test_places_list_returns_google_reputation_fields_from_model_or_metadata_fallback():
+    client = APIClient()
+    source = Source.objects.create(name="Google Places", slug="google-places")
+    category = Category.objects.create(name="Veterinarias", slug="veterinarias")
+
+    Place.objects.create(
+        name="Vet Modelo",
+        slug="vet-modelo",
+        category=category,
+        source=source,
+        status="active",
+        commune="Providencia",
+        region="Región Metropolitana",
+        formatted_address="Providencia, Región Metropolitana, Chile",
+        summary="Con reputación persistida",
+        google_rating="4.7",
+        google_reviews_count=84,
+    )
+    Place.objects.create(
+        name="Vet Metadata",
+        slug="vet-metadata",
+        category=category,
+        source=source,
+        status="active",
+        commune="Santiago",
+        region="Región Metropolitana",
+        formatted_address="Santiago, Región Metropolitana, Chile",
+        summary="Con reputación histórica",
+        metadata={"google_rating": 4.4, "google_total_ratings": 21},
+    )
+
+    response = client.get("/api/v1/places/")
+
+    assert response.status_code == 200
+    payload = {item["slug"]: item for item in response.data["results"]}
+    assert payload["vet-modelo"]["google_rating"] == 4.7
+    assert payload["vet-modelo"]["google_reviews_count"] == 84
+    assert payload["vet-metadata"]["google_rating"] == 4.4
+    assert payload["vet-metadata"]["google_reviews_count"] == 21
+
+
+@pytest.mark.django_db
+def test_places_list_returns_claim_requested_and_verified_premium_statuses():
+    client = APIClient()
+    source = Source.objects.create(name="Google Places", slug="google-places")
+    category = Category.objects.create(name="Veterinarias", slug="veterinarias")
+    owner_user = User.objects.create_user(
+        email="premium@example.com",
+        password="Password123!",
+        role=UserRole.BUSINESS_OWNER,
+    )
+    owner_profile = BusinessProfile.objects.create(
+        user=owner_user,
+        business_name="Premium Vet",
+        business_kind=BusinessKind.VETERINARY,
+        phone="+56911112222",
+        commune="Providencia",
+        region="Región Metropolitana",
+    )
+    premium_plan = MembershipPlan.objects.create(
+        name="Business Premium",
+        slug="business-premium-test",
+        audience="business",
+        billing_interval="monthly",
+        price_amount=19990,
+        metadata={"lifecycle": "business_paid"},
+    )
+    MembershipAssignment.objects.create(
+        plan=premium_plan,
+        owner=owner_profile,
+        status=MembershipAssignmentStatus.ACTIVE,
+        starts_at=timezone.now(),
+        renews_at=timezone.now(),
+    )
+    Place.objects.create(
+        name="Vet Premium",
+        slug="vet-premium",
+        category=category,
+        source=source,
+        status="active",
+        owner_business_profile=owner_profile,
+        verification_status="verified",
+        summary="Con membresía premium",
+        commune="Providencia",
+        region="Región Metropolitana",
+        formatted_address="Providencia, Región Metropolitana, Chile",
+    )
+    Place.objects.create(
+        name="Vet Reclamada",
+        slug="vet-reclamada",
+        category=category,
+        source=source,
+        status="active",
+        verification_status="claim_requested",
+        summary="Con solicitud en revisión",
+        commune="Santiago",
+        region="Región Metropolitana",
+        formatted_address="Santiago, Región Metropolitana, Chile",
+    )
+
+    response = client.get("/api/v1/places/")
+
+    assert response.status_code == 200
+    payload = {item["slug"]: item for item in response.data["results"]}
+    assert payload["vet-premium"]["verification_status"] == "verified_premium"
+    assert payload["vet-premium"]["is_premium_verified"] is True
+    assert payload["vet-premium"]["is_verified"] is True
+    assert payload["vet-premium"]["can_claim"] is False
+    assert payload["vet-reclamada"]["verification_status"] == "claim_requested"
+    assert payload["vet-reclamada"]["is_premium_verified"] is False
+    assert payload["vet-reclamada"]["is_verified"] is False
+    assert payload["vet-reclamada"]["can_claim"] is False

@@ -187,6 +187,12 @@ DETAIL_FIELDS = (
     "website,opening_hours,rating,user_ratings_total,types,address_components"
 )
 
+
+def build_google_maps_url(place_id: str) -> str:
+    if not place_id:
+        return ""
+    return f"https://www.google.com/maps/place/?q=place_id:{place_id}"
+
 @dataclass
 class PlacesClient:
     api_key: str
@@ -295,6 +301,7 @@ def normalize_record(
                 "region_target": region,
                 "search_keyword": search_keyword,
                 "search_radius_m": search_radius_m,
+                "google_maps_url": build_google_maps_url(details.get("place_id", "")),
             },
         },
         # Campos extra que usaremos al promover a Place

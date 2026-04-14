@@ -7,6 +7,12 @@ class PlaceStatus(models.TextChoices):
     ARCHIVED = "archived", "Archived"
 
 
+class PlaceVerificationStatus(models.TextChoices):
+    UNVERIFIED = "unverified", "Unverified"
+    CLAIM_REQUESTED = "claim_requested", "Claim requested"
+    VERIFIED = "verified", "Verified"
+
+
 class ContactPointKind(models.TextChoices):
     PHONE = "phone", "Phone"
     WHATSAPP = "whatsapp", "WhatsApp"

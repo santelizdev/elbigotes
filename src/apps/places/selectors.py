@@ -13,8 +13,8 @@ def build_place_queryset(params):
     """
 
     queryset = (
-        Place.objects.select_related("category", "subcategory", "source")
-        .prefetch_related("contact_points")
+        Place.objects.select_related("category", "subcategory", "source", "owner_business_profile")
+        .prefetch_related("contact_points", "claim_requests")
         .filter(status=PlaceStatus.ACTIVE)
     )
 
