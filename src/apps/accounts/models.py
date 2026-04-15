@@ -143,3 +143,37 @@ class PetProfile(TimeStampedModel):
 
     def __str__(self) -> str:
         return self.name
+
+
+class SavedPlace(TimeStampedModel):
+    """
+    Relación persistente entre un usuario autenticado y una ficha pública guardada.
+
+    La dejamos a nivel de usuario para no acoplarla únicamente al perfil de tutor y
+    mantener abierta la puerta a futuras experiencias cross-role.
+    """
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="saved_places",
+    )
+    place = models.ForeignKey(
+        "places.Place",
+        on_delete=models.CASCADE,
+        related_name="saved_by_users",
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "place"],
+                name="accounts_saved_place_unique_user_place",
+            )
+        ]
+        verbose_name = "Saved place"
+        verbose_name_plural = "Saved places"
+
+    def __str__(self) -> str:
+        return f"{self.user.email} -> {self.place.name}"

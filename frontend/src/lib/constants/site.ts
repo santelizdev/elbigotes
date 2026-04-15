@@ -15,4 +15,6 @@ export const siteConfig = {
   },
   defaultZoom: Number(process.env.NEXT_PUBLIC_DEFAULT_ZOOM ?? "11"),
   useMocks: process.env.NEXT_PUBLIC_USE_MOCKS === "true",
+  ga4MeasurementId: process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID ?? "",
+  clarityProjectId: process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID ?? "",
 };

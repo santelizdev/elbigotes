@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 
-from apps.accounts.models import BusinessProfile, PetOwnerProfile, PetProfile, User
+from apps.accounts.models import BusinessProfile, PetOwnerProfile, PetProfile, SavedPlace, User
 
 
 @admin.register(User)
@@ -77,3 +77,10 @@ class PetProfileAdmin(admin.ModelAdmin):
     list_filter = ("species", "sex", "is_active")
     search_fields = ("name", "owner__user__email", "breed")
     autocomplete_fields = ("owner",)
+
+
+@admin.register(SavedPlace)
+class SavedPlaceAdmin(admin.ModelAdmin):
+    list_display = ("user", "place", "created_at")
+    search_fields = ("user__email", "place__name", "place__slug")
+    autocomplete_fields = ("user", "place")

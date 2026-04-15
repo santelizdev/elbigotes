@@ -7,6 +7,7 @@ from apps.accounts.models import (
     BusinessProfile,
     PetOwnerProfile,
     PetProfile,
+    SavedPlace,
     User,
 )
 from apps.accounts.services import (
@@ -150,6 +151,68 @@ class BusinessOwnedPlaceSerializer(serializers.ModelSerializer):
     def get_is_primary(self, obj):
         profile = self.context.get("profile")
         return bool(profile and profile.place_id == obj.id)
+
+
+class SavedPlaceSerializer(serializers.ModelSerializer):
+    slug = serializers.CharField(source="place.slug", read_only=True)
+    name = serializers.CharField(source="place.name", read_only=True)
+    summary = serializers.CharField(source="place.summary", read_only=True)
+    category = serializers.CharField(source="place.category.slug", read_only=True)
+    formatted_address = serializers.CharField(source="place.formatted_address", read_only=True)
+    commune = serializers.CharField(source="place.commune", read_only=True)
+    region = serializers.CharField(source="place.region", read_only=True)
+    google_rating = serializers.SerializerMethodField()
+    google_reviews_count = serializers.IntegerField(source="place.google_reviews_count", read_only=True)
+    verification_status = serializers.CharField(source="place.verification_status", read_only=True)
+    saved_at = serializers.DateTimeField(source="created_at", read_only=True)
+
+    class Meta:
+        model = SavedPlace
+        fields = (
+            "slug",
+            "name",
+            "summary",
+            "category",
+            "formatted_address",
+            "commune",
+            "region",
+            "google_rating",
+            "google_reviews_count",
+            "verification_status",
+            "saved_at",
+        )
+
+    def get_google_rating(self, obj):
+        if obj.place.google_rating is None:
+            return None
+        return float(obj.place.google_rating)
+
+
+class SavedPlaceStatusSerializer(serializers.Serializer):
+    is_saved = serializers.BooleanField()
+    item = SavedPlaceSerializer(allow_null=True)
+
+
+class SavedPlaceCreateSerializer(serializers.Serializer):
+    place_slug = serializers.SlugField()
+
+    def validate_place_slug(self, value):
+        place = (
+            Place.objects.select_related("category")
+            .filter(slug=value, status="active")
+            .first()
+        )
+        if place is None:
+            raise serializers.ValidationError("La ficha que intentas guardar no está disponible.")
+        self.context["place"] = place
+        return value
+
+    def create(self, validated_data):
+        user = self.context["request"].user
+        place = self.context["place"]
+        saved_place, created = SavedPlace.objects.get_or_create(user=user, place=place)
+        self.context["created"] = created
+        return saved_place
 
 
 class BusinessRegistrationSerializer(serializers.Serializer):
@@ -346,6 +409,7 @@ class PetOwnerWorkspaceSerializer(serializers.Serializer):
     user = UserSummarySerializer()
     profile = PetOwnerProfileSerializer()
     reports = serializers.SerializerMethodField()
+    saved_places = serializers.SerializerMethodField()
 
     def get_reports(self, obj):
         profile = obj["profile"]
@@ -357,6 +421,15 @@ class PetOwnerWorkspaceSerializer(serializers.Serializer):
             .order_by("-last_seen_at", "-created_at")
         )
         return LostPetReportListSerializer(reports, many=True, context=self.context).data
+
+    def get_saved_places(self, obj):
+        user = obj["user"]
+        saved_places = (
+            SavedPlace.objects.select_related("place", "place__category")
+            .filter(user=user, place__status="active")
+            .order_by("-created_at")
+        )
+        return SavedPlaceSerializer(saved_places, many=True).data
 
 
 class BusinessWorkspaceUpdateSerializer(serializers.Serializer):

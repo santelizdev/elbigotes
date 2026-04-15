@@ -65,6 +65,25 @@ interface MembershipAssignmentSummary {
   renewal_required?: boolean;
 }
 
+export interface SavedPlaceItem {
+  slug: string;
+  name: string;
+  summary: string;
+  category: string;
+  formatted_address: string;
+  commune: string;
+  region: string;
+  google_rating?: number | null;
+  google_reviews_count: number;
+  verification_status: string;
+  saved_at: string;
+}
+
+export interface SavedPlaceStatusResponse {
+  is_saved: boolean;
+  item: SavedPlaceItem | null;
+}
+
 export interface AccountLoginPayload {
   email: string;
   password: string;
@@ -191,6 +210,7 @@ export interface PetOwnerWorkspaceResponse {
     moderation_status: string;
     created_at: string;
   }>;
+  saved_places: SavedPlaceItem[];
 }
 
 export async function getRegistrationCatalog(): Promise<{
@@ -264,6 +284,38 @@ export async function getPetOwnerWorkspace(token: string): Promise<PetOwnerWorks
   return apiRequest("/accounts/me/pet-owner/", {
     headers: buildAuthHeaders(token),
     cache: "no-store",
+  });
+}
+
+export async function getSavedPlaces(token: string): Promise<SavedPlaceItem[]> {
+  return apiRequest("/accounts/me/saved-places/", {
+    headers: buildAuthHeaders(token),
+    cache: "no-store",
+  });
+}
+
+export async function getSavedPlaceStatus(
+  token: string,
+  placeSlug: string,
+): Promise<SavedPlaceStatusResponse> {
+  return apiRequest(`/accounts/me/saved-places/${placeSlug}/`, {
+    headers: buildAuthHeaders(token),
+    cache: "no-store",
+  });
+}
+
+export async function savePlace(token: string, placeSlug: string): Promise<SavedPlaceItem> {
+  return apiRequest("/accounts/me/saved-places/", {
+    method: "POST",
+    headers: buildAuthHeaders(token),
+    body: JSON.stringify({ place_slug: placeSlug }),
+  });
+}
+
+export async function removeSavedPlace(token: string, placeSlug: string): Promise<void> {
+  return apiRequest(`/accounts/me/saved-places/${placeSlug}/`, {
+    method: "DELETE",
+    headers: buildAuthHeaders(token),
   });
 }
 

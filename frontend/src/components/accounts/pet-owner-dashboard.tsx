@@ -130,6 +130,15 @@ export function PetOwnerDashboard() {
               : "Aún no hay una dirección consolidada en tu perfil."}
           </p>
         </article>
+
+        <article className={styles.card}>
+          <p className="eyebrow">Fichas guardadas</p>
+          <h3>{workspace.saved_places.length}</h3>
+          <p>
+            Guarda negocios para volver rápido a las fichas que más te interesan y compartirlas
+            cuando las necesites.
+          </p>
+        </article>
       </section>
 
       <section className={styles.grid}>
@@ -171,6 +180,35 @@ export function PetOwnerDashboard() {
             </p>
           </section>
         </aside>
+      </section>
+
+      <section className={styles.formCard}>
+        <p className="eyebrow">Tus fichas</p>
+        <h2>Negocios guardados</h2>
+        <div className={styles.stackList}>
+          {workspace.saved_places.length ? (
+            workspace.saved_places.map((place) => (
+              <article key={place.slug} className={styles.listCard}>
+                <div>
+                  <strong>{place.name}</strong>
+                  <p>
+                    {place.commune}, {place.region}
+                    {place.google_rating ? ` · ${place.google_rating.toFixed(1)} estrellas` : ""}
+                    {place.google_reviews_count ? ` · ${place.google_reviews_count} reseñas` : ""}
+                  </p>
+                </div>
+                <Button href={`/lugares/${place.slug}`} variant="secondary">
+                  Abrir ficha
+                </Button>
+              </article>
+            ))
+          ) : (
+            <div className={styles.statusBox}>
+              Todavía no has guardado fichas. Cuando encuentres un negocio interesante, podrás
+              dejarlo en tu perfil con un clic.
+            </div>
+          )}
+        </div>
       </section>
 
       <section className={styles.formCard}>

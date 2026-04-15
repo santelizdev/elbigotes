@@ -1,4 +1,5 @@
 import { PlaceGoogleRating } from "@/components/places/place-google-rating";
+import { PlaceLoopActions } from "@/components/places/place-loop-actions";
 import styles from "@/components/places/place-detail-sheet.module.css";
 import { Button } from "@/components/ui/button";
 import { StatusPill } from "@/components/ui/status-pill";
@@ -42,6 +43,8 @@ export function PlaceDetailSheet({ place }: { place: Place }) {
       </p>
 
       <PlaceGoogleRating rating={place.googleRating} reviewsCount={place.googleReviewsCount} />
+
+      <PlaceLoopActions place={place} />
 
       <div className={styles.grid}>
         <div className={styles.metaCard}>

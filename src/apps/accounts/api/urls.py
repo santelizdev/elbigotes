@@ -8,6 +8,8 @@ from apps.accounts.api.views import (
     PetOwnerRegistrationView,
     PetOwnerWorkspaceView,
     RegistrationCatalogView,
+    SavedPlaceCollectionView,
+    SavedPlaceDetailView,
 )
 
 urlpatterns = [
@@ -25,6 +27,12 @@ urlpatterns = [
     ),
     path("me/business/", BusinessWorkspaceView.as_view(), name="accounts-me-business"),
     path("me/pet-owner/", PetOwnerWorkspaceView.as_view(), name="accounts-me-pet-owner"),
+    path("me/saved-places/", SavedPlaceCollectionView.as_view(), name="accounts-me-saved-places"),
+    path(
+        "me/saved-places/<slug:place_slug>/",
+        SavedPlaceDetailView.as_view(),
+        name="accounts-me-saved-place-detail",
+    ),
     path(
         "me/business/branches/",
         BusinessBranchCreateView.as_view(),

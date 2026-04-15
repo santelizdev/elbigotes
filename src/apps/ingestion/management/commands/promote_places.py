@@ -35,6 +35,8 @@ from apps.places.choices import PlaceStatus
 from apps.places.models import ContactPoint, Place
 from apps.taxonomy.models import Category, Subcategory
 
+from apps.places.services.hours import normalize_google_opening_hours
+
 
 # ---------------------------------------------------------------------------
 # Mapeo: category_slug del raw_payload → slug real en tu DB
@@ -208,6 +210,40 @@ def build_google_maps_url(place_id: str) -> str:
         return ""
     return f"https://www.google.com/maps/place/?q=place_id:{place_id}"
 
+def looks_like_24_7(normalized_schedule: dict) -> bool:
+    """
+    Heurística simple para detectar si un horario equivale a 24/7.
+
+    Regla actual:
+    - Cada día debe tener exactamente un bloque
+    - Ese bloque debe ser 00:00 -> 23:59
+
+    Esto evita depender ciegamente de un booleano externo y nos permite
+    recalcular is_open_24_7 a partir del horario normalizado.
+    """
+    if not normalized_schedule:
+        return False
+
+    expected_days = (
+        "monday",
+        "tuesday",
+        "wednesday",
+        "thursday",
+        "friday",
+        "saturday",
+        "sunday",
+    )
+
+    for day in expected_days:
+        blocks = normalized_schedule.get(day, [])
+        if len(blocks) != 1:
+            return False
+
+        block = blocks[0]
+        if block.get("open") != "00:00" or block.get("close") != "23:59":
+            return False
+
+    return True
 
 def _normalize_text(value: str) -> str:
     return slugify(value or "").replace("-", " ")
@@ -466,6 +502,13 @@ def build_place_from_record(
     """
     google = record.raw_payload.get("google", {})
     meta   = record.raw_payload.get("meta", {})
+    # --- Horarios Google ---
+    # Se guarda tanto la versión cruda como una versión normalizada
+    # para cálculos internos y exposición pública en API.
+    opening_hours_raw = google.get("opening_hours") or {}
+    opening_hours_normalized = normalize_google_opening_hours(opening_hours_raw)
+    
+    detected_open_24_7 = looks_like_24_7(opening_hours_normalized)
 
     is_relevant, relevance_error = is_record_relevant(record)
     if not is_relevant:
@@ -526,7 +569,12 @@ def build_place_from_record(
         is_verified      = False,
         is_featured      = False,
         is_emergency_service = category_slug_raw == "emergencia-veterinaria",
-        is_open_24_7     = category_slug_raw == "emergencia-veterinaria",
+        # Si el horario normalizado realmente luce como 24/7, lo marcamos.
+        # Mantenemos además el caso especial de emergencia veterinaria como fallback.
+        is_open_24_7     = detected_open_24_7 or category_slug_raw == "emergencia-veterinaria",
+        opening_hours_raw = opening_hours_raw,
+        opening_hours_normalized = opening_hours_normalized,
+        timezone_name    = "America/Santiago",
         google_rating    = google.get("rating"),
         google_reviews_count = google.get("user_ratings_total", 0) or 0,
         google_maps_url  = meta.get("google_maps_url", "") or build_google_maps_url(record.external_id),
@@ -540,6 +588,8 @@ def build_place_from_record(
             "import_category_slug": category_slug_raw,
             "import_search_keyword": meta.get("search_keyword", ""),
             "review_status": "pending",
+            "google_opening_hours_present": bool(opening_hours_raw),
+            "google_open_now": opening_hours_raw.get("open_now"),
         },
     )
 
@@ -596,6 +646,9 @@ def update_existing_place(existing: Place, candidate: Place) -> Place:
         "google_maps_url",
         "source",
         "owner_business_profile",
+        "opening_hours_raw",
+        "opening_hours_normalized",
+        "timezone_name",
     )
 
     for field_name in editable_fields:

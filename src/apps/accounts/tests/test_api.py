@@ -2,6 +2,7 @@ from datetime import timedelta
 
 import pytest
 from django.core.exceptions import ValidationError
+from django.contrib.gis.geos import Point
 from django.utils import timezone
 from rest_framework.test import APIClient
 
@@ -10,6 +11,7 @@ from apps.accounts.models import (
     BusinessProfile,
     PetOwnerProfile,
     PetProfile,
+    SavedPlace,
     User,
     UserRole,
 )
@@ -22,6 +24,7 @@ from apps.memberships.models import (
     MembershipBillingInterval,
     MembershipPlan,
 )
+from apps.places.models import Place
 from apps.taxonomy.models import Category
 
 
@@ -376,6 +379,163 @@ def test_pet_owner_workspace_returns_pets_reports_and_memberships():
     assert response.data["profile"]["memberships"][0]["plan_slug"] == "tutor-plus"
     assert len(response.data["reports"]) == 1
     assert response.data["reports"][0]["id"] == str(report.id)
+    assert response.data["saved_places"] == []
+
+
+@pytest.mark.django_db
+def test_pet_owner_can_save_check_and_remove_places():
+    client = APIClient()
+    user = User.objects.create_user(
+        email="saved@example.com",
+        password="Password123!",
+        role=UserRole.PET_OWNER,
+    )
+    PetOwnerProfile.objects.create(
+        user=user,
+        phone="+56999990000",
+        commune="Providencia",
+        region="Región Metropolitana",
+    )
+    category = Category.objects.create(name="Veterinarias", slug="veterinarias")
+    place = Place.objects.create(
+        name="Vet Favorita",
+        slug="vet-favorita",
+        category=category,
+        status="active",
+        commune="Providencia",
+        region="Región Metropolitana",
+        formatted_address="Providencia 123, Santiago, Chile",
+        summary="Atención cercana",
+        location=Point(-70.6175, -33.4257, srid=4326),
+        google_rating="4.9",
+        google_reviews_count=83,
+    )
+
+    token = create_access_token(user)
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+
+    save_response = client.post(
+        "/api/v1/accounts/me/saved-places/",
+        data={"place_slug": place.slug},
+        format="json",
+    )
+
+    assert save_response.status_code == 201
+    assert save_response.data["slug"] == place.slug
+    assert save_response.data["google_rating"] == 4.9
+    assert SavedPlace.objects.filter(user=user, place=place).exists() is True
+
+    status_response = client.get(f"/api/v1/accounts/me/saved-places/{place.slug}/")
+    assert status_response.status_code == 200
+    assert status_response.data["is_saved"] is True
+    assert status_response.data["item"]["slug"] == place.slug
+
+    duplicate_response = client.post(
+        "/api/v1/accounts/me/saved-places/",
+        data={"place_slug": place.slug},
+        format="json",
+    )
+    assert duplicate_response.status_code == 200
+    assert SavedPlace.objects.filter(user=user, place=place).count() == 1
+
+    list_response = client.get("/api/v1/accounts/me/saved-places/")
+    assert list_response.status_code == 200
+    assert len(list_response.data) == 1
+    assert list_response.data[0]["slug"] == place.slug
+
+    delete_response = client.delete(f"/api/v1/accounts/me/saved-places/{place.slug}/")
+    assert delete_response.status_code == 204
+    assert SavedPlace.objects.filter(user=user, place=place).exists() is False
+
+    status_after_delete = client.get(f"/api/v1/accounts/me/saved-places/{place.slug}/")
+    assert status_after_delete.status_code == 200
+    assert status_after_delete.data["is_saved"] is False
+    assert status_after_delete.data["item"] is None
+
+
+@pytest.mark.django_db
+def test_pet_owner_workspace_includes_saved_places():
+    client = APIClient()
+    user = User.objects.create_user(
+        email="workspace-saved@example.com",
+        password="Password123!",
+        first_name="Josefa",
+        role=UserRole.PET_OWNER,
+    )
+    profile = PetOwnerProfile.objects.create(
+        user=user,
+        phone="+56988887777",
+        commune="Santiago",
+        region="Región Metropolitana",
+        marketing_opt_in=True,
+    )
+    category = Category.objects.create(name="Guarderías", slug="guarderias")
+    place = Place.objects.create(
+        name="Guarderia Central",
+        slug="guarderia-central",
+        category=category,
+        status="active",
+        commune="Santiago",
+        region="Región Metropolitana",
+        formatted_address="Santiago Centro, Chile",
+        summary="Cuidado diario para perros",
+        google_rating="4.6",
+        google_reviews_count=41,
+    )
+    SavedPlace.objects.create(user=user, place=place)
+
+    token = create_access_token(user)
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+
+    response = client.get("/api/v1/accounts/me/pet-owner/")
+
+    assert response.status_code == 200
+    assert response.data["profile"]["phone"] == profile.phone
+    assert len(response.data["saved_places"]) == 1
+    assert response.data["saved_places"][0]["slug"] == place.slug
+    assert response.data["saved_places"][0]["name"] == place.name
+
+
+@pytest.mark.django_db
+def test_saved_places_require_authenticated_pet_owner():
+    client = APIClient()
+    category = Category.objects.create(name="Parques", slug="parques-pet-friendly")
+    place = Place.objects.create(
+        name="Parque Guardado",
+        slug="parque-guardado",
+        category=category,
+        status="active",
+        commune="Providencia",
+        region="Región Metropolitana",
+        formatted_address="Providencia, Chile",
+        summary="Lugar abierto",
+    )
+
+    unauthenticated_response = client.post(
+        "/api/v1/accounts/me/saved-places/",
+        data={"place_slug": place.slug},
+        format="json",
+    )
+    assert unauthenticated_response.status_code == 403
+
+    business_user = User.objects.create_user(
+        email="biz-save@example.com",
+        password="Password123!",
+        role=UserRole.BUSINESS_OWNER,
+    )
+    BusinessProfile.objects.create(
+        user=business_user,
+        business_name="Vet Norte",
+        business_kind=BusinessKind.VETERINARY,
+        phone="+56944445555",
+        commune="Providencia",
+        region="Región Metropolitana",
+    )
+    token = create_access_token(business_user)
+    client.credentials(HTTP_AUTHORIZATION=f"Bearer {token}")
+
+    forbidden_response = client.get(f"/api/v1/accounts/me/saved-places/{place.slug}/")
+    assert forbidden_response.status_code == 403
 
 
 @pytest.mark.django_db

@@ -5,6 +5,10 @@ from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.utils import timezone
 
+from zoneinfo import ZoneInfo
+from django.utils import timezone
+from django.db import models
+
 from apps.core.models import TimeStampedModel
 from apps.core.utils.slugs import generate_unique_slug
 from apps.ingestion.models import Source
@@ -19,6 +23,35 @@ from apps.taxonomy.models import Category, Subcategory
 
 
 class Place(TimeStampedModel):
+
+        # Horario crudo entregado por Google u otra fuente.
+    # Se conserva para trazabilidad y debugging.
+    opening_hours_raw = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Horario crudo de la fuente externa, sin normalizar.",
+    )
+
+    # Horario interno normalizado para consumo de producto/API.
+    # Estructura esperada:
+    # {
+    #   "monday": [{"open": "09:00", "close": "18:00"}],
+    #   "tuesday": [],
+    #   ...
+    # }
+    opening_hours_normalized = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Horario estructurado normalizado para cálculos internos.",
+    )
+
+    # Zona horaria del lugar. Por ahora default Chile.
+    timezone_name = models.CharField(
+        max_length=64,
+        default="America/Santiago",
+        help_text="Zona horaria IANA usada para cálculos de apertura.",
+    )
+    
     """
     Ficha pública principal del mapa. Se mantiene intencionalmente compacta;
     los contactos y la procedencia viven en tablas separadas para escalar sin rigidez.
@@ -139,7 +172,19 @@ class Place(TimeStampedModel):
 
     def __str__(self) -> str:
         return self.name
+    def is_open_now_at(self, dt=None) -> bool:
+        """
+        Determina si el lugar está abierto en el instante indicado.
 
+        Reglas:
+        - Si is_open_24_7 es True, retorna True.
+        - Si no hay horario normalizado, retorna False.
+        - Usa timezone_name del lugar; por defecto America/Santiago.
+        - Soporta franjas que cruzan medianoche.
+        """
+        from apps.places.services.hours import is_place_open_now
+
+        return is_place_open_now(self, dt=dt)
 
 class ContactPoint(TimeStampedModel):
     place = models.ForeignKey(Place, on_delete=models.CASCADE, related_name="contact_points")

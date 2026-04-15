@@ -26,6 +26,8 @@ class PlaceListSerializer(serializers.ModelSerializer):
     verification_status = serializers.SerializerMethodField()
     is_premium_verified = serializers.SerializerMethodField()
     can_claim = serializers.SerializerMethodField()
+    is_open_now = serializers.SerializerMethodField()
+    opening_hours = serializers.SerializerMethodField()
 
     class Meta:
         model = Place
@@ -53,8 +55,15 @@ class PlaceListSerializer(serializers.ModelSerializer):
             "is_premium_verified",
             "can_claim",
             "contact_points",
+            "is_open_now",
+            "opening_hours",
         )
+    def get_is_open_now(self, obj):
+        return obj.is_open_now_at()
 
+    def get_opening_hours(self, obj):
+        return obj.opening_hours_normalized or {}
+    
     def get_latitude(self, obj):
         return obj.location.y if obj.location else None
 

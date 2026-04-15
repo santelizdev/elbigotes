@@ -1,4 +1,5 @@
 import { PlaceGoogleRating } from "@/components/places/place-google-rating";
+import { PlaceLoopActions } from "@/components/places/place-loop-actions";
 import styles from "@/components/places/place-profile.module.css";
 import { LeafletMap } from "@/components/map/leaflet-map";
 import { Button } from "@/components/ui/button";
@@ -63,6 +64,8 @@ export function PlaceProfile({ place }: { place: Place }) {
         </div>
 
         <PlaceGoogleRating rating={place.googleRating} reviewsCount={place.googleReviewsCount} />
+
+        <PlaceLoopActions place={place} />
       </section>
 
       <div className={styles.grid}>

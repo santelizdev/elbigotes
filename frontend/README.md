@@ -12,6 +12,8 @@ Usa `frontend/.env.example` como base.
 - `NEXT_PUBLIC_DEFAULT_LNG`
 - `NEXT_PUBLIC_DEFAULT_ZOOM`
 - `NEXT_PUBLIC_USE_MOCKS`
+- `NEXT_PUBLIC_GA4_MEASUREMENT_ID`
+- `NEXT_PUBLIC_CLARITY_PROJECT_ID`
 
 ## Desarrollo local
 
@@ -28,4 +30,3 @@ npm run dev
 - `src/lib/services`: cliente HTTP y adaptadores del backend Django.
 - `src/lib/mocks`: fallback ordenado mientras el backend no esté disponible.
 - `src/hooks`: estado de exploración del mapa sin introducir librerías de estado global demasiado pronto.
-
