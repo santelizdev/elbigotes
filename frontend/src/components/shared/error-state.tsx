@@ -2,6 +2,8 @@
 
 import { useEffect } from "react";
 
+import { FeedbackPanel } from "@/components/ui/feedback-panel";
+
 export function ErrorState({
   title = "No se pudo cargar la información",
   message,
@@ -13,10 +15,5 @@ export function ErrorState({
     console.error("[ErrorState]", { title, message });
   }, [title, message]);
 
-  return (
-    <div className="feedback-panel feedback-panel--error">
-      <p className="feedback-panel__title">{title}</p>
-      <p>{message}</p>
-    </div>
-  );
+  return <FeedbackPanel title={title} message={<p className="m-0">{message}</p>} tone="error" />;
 }

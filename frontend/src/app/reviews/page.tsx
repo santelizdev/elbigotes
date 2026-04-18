@@ -1,6 +1,9 @@
 import { Metadata } from "next";
 
-import styles from "@/components/accounts/registration.module.css";
+import { PageHero } from "@/components/ui/page-hero";
+import { PageShell } from "@/components/ui/page-shell";
+import { SectionHeader } from "@/components/ui/section-header";
+import { SurfaceCard } from "@/components/ui/surface-card";
 import { getPublishedReviews } from "@/lib/services/reviews-service";
 
 export const metadata: Metadata = {
@@ -16,31 +19,32 @@ export default async function ReviewsPage() {
   const reviews = await getPublishedReviews();
 
   return (
-    <div className={styles.page}>
-      <section className={styles.hero}>
-        <p className="eyebrow">Opiniones del directorio</p>
-        <h1 className="page-title">Reviews publicadas</h1>
-        <p className="page-lead">
-          Valoraciones moderadas de usuarios sobre veterinarias, guarderías, refugios, parques y
-          otros servicios del ecosistema pet.
-        </p>
-      </section>
+    <PageShell>
+      <PageHero
+        eyebrow="Opiniones del directorio"
+        title="Reviews publicadas"
+        description="Valoraciones moderadas de usuarios sobre veterinarias, guarderías, refugios, parques y otros servicios del ecosistema pet."
+      />
 
-      <section className={styles.formCard}>
-        <p className="eyebrow">Últimas reseñas</p>
-        <h2>Comunidad</h2>
-        <div className={styles.stackList}>
+      <SurfaceCard className="grid gap-5">
+        <SectionHeader eyebrow="Últimas reseñas" title="Comunidad" />
+        <div className="grid gap-3">
           {reviews.length ? (
             reviews.map((review) => (
-              <article key={review.id} className={styles.listCard}>
-                <div>
+              <article
+                key={review.id}
+                className="flex flex-col gap-4 rounded-2xl border border-app-border bg-[color-mix(in_srgb,var(--surface-raised)_88%,transparent)] p-4 sm:flex-row sm:items-start sm:justify-between"
+              >
+                <div className="grid gap-2">
                   <strong>{review.title || `${review.place_name} · ${review.reviewer_name}`}</strong>
-                  <p>{review.body}</p>
-                  <p>
+                  <p className="m-0 text-sm leading-7 text-app-text-soft">{review.body}</p>
+                  <p className="m-0 text-sm text-app-text-muted">
                     {review.place_name} · {review.reviewer_name}
                   </p>
                 </div>
-                <span className={styles.statusBox}>{renderStars(review.rating)}</span>
+                <span className="inline-flex rounded-2xl border border-[color-mix(in_srgb,var(--accent-emerald)_18%,transparent)] bg-[color-mix(in_srgb,var(--accent-emerald)_12%,transparent)] px-4 py-3 text-app-text-soft">
+                  {renderStars(review.rating)}
+                </span>
               </article>
             ))
           ) : (
@@ -49,7 +53,7 @@ export default async function ReviewsPage() {
             </div>
           )}
         </div>
-      </section>
-    </div>
+      </SurfaceCard>
+    </PageShell>
   );
 }

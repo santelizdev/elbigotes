@@ -2,11 +2,14 @@
 
 import { FormEvent, useState } from "react";
 
-import styles from "@/components/lost-pets/lost-pet-report-form.module.css";
 import { LocationPicker } from "@/components/map/location-picker";
 import { ErrorState } from "@/components/shared/error-state";
 import { LoadingPanel } from "@/components/shared/loading-panel";
 import { Button } from "@/components/ui/button";
+import { FormCheckbox, FormField, FormGrid, InfoBox } from "@/components/ui/form-primitives";
+import { PageHero } from "@/components/ui/page-hero";
+import { PageShell } from "@/components/ui/page-shell";
+import { SurfaceCard } from "@/components/ui/surface-card";
 import { getApiErrorMessage } from "@/lib/services/api-client";
 import { createLostPetReport } from "@/lib/services/lost-pets-service";
 
@@ -87,113 +90,114 @@ export function LostPetReportForm() {
   }
 
   return (
-    <div className={styles.shell}>
-      <section className={styles.intro}>
-        <p className="eyebrow">Publicación guiada</p>
-        <h1 className="page-title">Publicar una mascota perdida</h1>
-        <p className="page-lead">
-          Este flujo prioriza la última ubicación conocida, una foto liviana y un contacto claro
-          para activar la búsqueda sin pedir datos técnicos al usuario.
-        </p>
-      </section>
+    <PageShell>
+      <PageHero
+        eyebrow="Publicación guiada"
+        title="Publicar una mascota perdida"
+        description="Este flujo prioriza la última ubicación conocida, una foto liviana y un contacto claro para activar la búsqueda sin pedir datos técnicos al usuario."
+        className="border-[rgba(251,191,36,0.18)] bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.18),transparent_32%),linear-gradient(180deg,color-mix(in_srgb,var(--background-soft)_96%,transparent),color-mix(in_srgb,var(--background)_98%,transparent))]"
+      />
 
-      <div className={styles.grid}>
-        <form className={styles.form} onSubmit={handleSubmit}>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <SurfaceCard className="grid gap-5">
+          <form className="grid gap-5" onSubmit={handleSubmit}>
           {/* El formulario agrupa primero identidad y último punto conocido porque eso es lo que activa la búsqueda real. */}
-          <div className={styles.field}>
-            <label htmlFor="pet_name">Nombre de la mascota</label>
-            <input id="pet_name" name="pet_name" required />
-          </div>
-          <div className={styles.field}>
-            <label htmlFor="species">Especie</label>
-            <select id="species" name="species" defaultValue="dog">
-              <option value="dog">Perro</option>
-              <option value="cat">Gato</option>
-              <option value="other">Otra</option>
-            </select>
-          </div>
-          <div className={styles.field}>
-            <label htmlFor="breed">Raza o descripción breve</label>
-            <input id="breed" name="breed" />
-          </div>
-          <div className={styles.field}>
-            <label htmlFor="sex">Sexo</label>
-            <select id="sex" name="sex" defaultValue="unknown">
-              <option value="unknown">No identificado</option>
-              <option value="male">Macho</option>
-              <option value="female">Hembra</option>
-            </select>
-          </div>
-          <div className={`${styles.field} ${styles.full}`}>
-            <label htmlFor="color_description">Color y aspecto visible</label>
-            <input id="color_description" name="color_description" required />
-          </div>
-          <div className={styles.field}>
-            <label htmlFor="last_seen_at">Fecha y hora del último avistamiento</label>
-            <input id="last_seen_at" name="last_seen_at" type="datetime-local" required />
-          </div>
-          <div className={`${styles.field} ${styles.full}`}>
-            <label htmlFor="last_seen_address">Dirección o referencia principal</label>
-            <input id="last_seen_address" name="last_seen_address" required />
-          </div>
-          <div className={`${styles.field} ${styles.full}`}>
-            <label htmlFor="last_seen_reference">Referencia adicional</label>
-            <input id="last_seen_reference" name="last_seen_reference" />
-          </div>
-          <div className={`${styles.field} ${styles.full}`}>
-            <label>Último punto visto en el mapa</label>
-            <div className={styles.mapPicker}>
-              <LocationPicker
-                latitude={selectedLatitude}
-                longitude={selectedLongitude}
-                onChange={(latitude, longitude) => {
-                  setSelectedLatitude(latitude);
-                  setSelectedLongitude(longitude);
-                }}
+          <FormGrid>
+            <FormField label="Nombre de la mascota" htmlFor="pet_name">
+              <input className="form-control" id="pet_name" name="pet_name" required />
+            </FormField>
+            <FormField label="Especie" htmlFor="species">
+              <select className="form-control" id="species" name="species" defaultValue="dog">
+                <option value="dog">Perro</option>
+                <option value="cat">Gato</option>
+                <option value="other">Otra</option>
+              </select>
+            </FormField>
+            <FormField label="Raza o descripción breve" htmlFor="breed">
+              <input className="form-control" id="breed" name="breed" />
+            </FormField>
+            <FormField label="Sexo" htmlFor="sex">
+              <select className="form-control" id="sex" name="sex" defaultValue="unknown">
+                <option value="unknown">No identificado</option>
+                <option value="male">Macho</option>
+                <option value="female">Hembra</option>
+              </select>
+            </FormField>
+            <FormField label="Color y aspecto visible" htmlFor="color_description" fullWidth>
+              <input className="form-control" id="color_description" name="color_description" required />
+            </FormField>
+            <FormField label="Fecha y hora del último avistamiento" htmlFor="last_seen_at">
+              <input className="form-control" id="last_seen_at" name="last_seen_at" type="datetime-local" required />
+            </FormField>
+            <FormField label="Dirección o referencia principal" htmlFor="last_seen_address" fullWidth>
+              <input className="form-control" id="last_seen_address" name="last_seen_address" required />
+            </FormField>
+            <FormField label="Referencia adicional" htmlFor="last_seen_reference" fullWidth>
+              <input className="form-control" id="last_seen_reference" name="last_seen_reference" />
+            </FormField>
+            <FormField
+              label="Último punto visto en el mapa"
+              fullWidth
+              helper="Haz clic en el mapa para dejar la ubicación territorial del aviso y que el reporte se vea realmente en la vista pública."
+            >
+              <div className="min-h-[280px] overflow-hidden rounded-[1rem] border border-app-border-strong">
+                <LocationPicker
+                  latitude={selectedLatitude}
+                  longitude={selectedLongitude}
+                  onChange={(latitude, longitude) => {
+                    setSelectedLatitude(latitude);
+                    setSelectedLongitude(longitude);
+                  }}
+                />
+              </div>
+            </FormField>
+            <FormField label="Nombre de contacto" htmlFor="reporter_name">
+              <input className="form-control" id="reporter_name" name="reporter_name" required />
+            </FormField>
+            <FormField label="Teléfono" htmlFor="reporter_phone">
+              <input className="form-control" id="reporter_phone" name="reporter_phone" required />
+            </FormField>
+            <FormField label="Email" htmlFor="reporter_email">
+              <input className="form-control" id="reporter_email" name="reporter_email" type="email" />
+            </FormField>
+            <FormField
+              label="Foto de la mascota"
+              htmlFor="photo"
+              fullWidth
+              helper="Sube una imagen JPG, PNG o WebP. El backend la comprimirá para no saturar el servidor."
+            >
+              <input
+                className="form-control"
+                id="photo"
+                name="photo"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
               />
-            </div>
-            <span className={styles.helpText}>
-              Haz clic en el mapa para dejar la ubicación territorial del aviso y que el reporte se
-              vea realmente en la vista pública.
-            </span>
-          </div>
-          <div className={styles.field}>
-            <label htmlFor="reporter_name">Nombre de contacto</label>
-            <input id="reporter_name" name="reporter_name" required />
-          </div>
-          <div className={styles.field}>
-            <label htmlFor="reporter_phone">Teléfono</label>
-            <input id="reporter_phone" name="reporter_phone" required />
-          </div>
-          <div className={styles.field}>
-            <label htmlFor="reporter_email">Email</label>
-            <input id="reporter_email" name="reporter_email" type="email" />
-          </div>
-          <div className={`${styles.field} ${styles.full}`}>
-            <label htmlFor="photo">Foto de la mascota</label>
-            <input
-              id="photo"
-              name="photo"
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-            />
-            <span className={styles.helpText}>
-              Sube una imagen JPG, PNG o WebP. El backend la comprimirá para no saturar el
-              servidor.
-            </span>
-          </div>
-          <div className={styles.field}>
-            <label className={styles.checkboxRow} htmlFor="is_reward_offered">
-              <input id="is_reward_offered" name="is_reward_offered" type="checkbox" />
-              <span>Se ofrece recompensa</span>
-            </label>
-          </div>
-          <div className={styles.field}>
-            <label htmlFor="reward_amount">Monto recompensa</label>
-            <input id="reward_amount" name="reward_amount" type="number" min="0" step="1000" />
-          </div>
+            </FormField>
+            <FormField label="Recompensa" fullWidth className="gap-3">
+              <div className="grid gap-3 md:grid-cols-[minmax(0,220px)_minmax(0,1fr)] md:items-end">
+                <FormCheckbox htmlFor="is_reward_offered">
+                  <input id="is_reward_offered" name="is_reward_offered" type="checkbox" />
+                  <span>Se ofrece recompensa</span>
+                </FormCheckbox>
+                <div className="grid gap-2">
+                  <label htmlFor="reward_amount" className="text-[0.92rem] font-semibold">
+                    Monto recompensa
+                  </label>
+                  <input
+                    className="form-control"
+                    id="reward_amount"
+                    name="reward_amount"
+                    type="number"
+                    min="0"
+                    step="1000"
+                  />
+                </div>
+              </div>
+            </FormField>
+          </FormGrid>
 
-          <Button type="submit" disabled={loading}>
+          <Button type="submit" disabled={loading} className="w-full sm:w-auto">
             {loading ? "Publicando..." : "Publicar reporte"}
           </Button>
 
@@ -201,34 +205,38 @@ export function LostPetReportForm() {
           {error ? <ErrorState message={error} /> : null}
           {successMessage ? <div className="success-banner">{successMessage}</div> : null}
         </form>
+        </SurfaceCard>
 
-        <aside className={styles.aside}>
-          <div className={styles.tipCard}>
+        <aside className="grid content-start gap-4">
+          <SurfaceCard className="grid gap-3 bg-app-surface-raised">
             <h3>Cómo está pensada la UX</h3>
             <p>
               El formulario pide primero la ubicación y los rasgos útiles porque son los datos más
               relevantes para activar una búsqueda territorial rápida en mapa.
             </p>
-          </div>
-          <div className={styles.tipCard}>
+          </SurfaceCard>
+          <SurfaceCard className="grid gap-3 bg-app-surface-raised">
             <h3>Consejos para publicar mejor</h3>
             <p>
               Usa una referencia concreta, agrega un número siempre disponible y describe collar,
               color general, tamaño y la calle o punto donde fue visto por última vez.
             </p>
-          </div>
-          <div className={styles.tipCard}>
+          </SurfaceCard>
+          <SurfaceCard className="grid gap-4 bg-app-surface-raised">
             <h3>Preparado para crecer</h3>
             <p>
               Este flujo ya deja espacio para validación, moderación, perfiles reclamados,
               destacadas y futuras notificaciones geolocalizadas.
             </p>
+            <InfoBox tone="muted">
+              Esta capa ya queda lista para sumar alertas geolocalizadas, guardado de búsquedas y difusión social sin rediseñar la base.
+            </InfoBox>
             <Button href="/mascotas-perdidas" variant="secondary" fullWidth>
               Ver reportes activos
             </Button>
-          </div>
+          </SurfaceCard>
         </aside>
       </div>
-    </div>
+    </PageShell>
   );
 }

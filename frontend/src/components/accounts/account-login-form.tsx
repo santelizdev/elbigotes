@@ -3,10 +3,13 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import styles from "@/components/accounts/registration.module.css";
 import { ErrorState } from "@/components/shared/error-state";
 import { LoadingPanel } from "@/components/shared/loading-panel";
 import { Button } from "@/components/ui/button";
+import { FormField, FormGrid } from "@/components/ui/form-primitives";
+import { PageHero } from "@/components/ui/page-hero";
+import { PageShell } from "@/components/ui/page-shell";
+import { SurfaceCard } from "@/components/ui/surface-card";
 import { getApiErrorMessage } from "@/lib/services/api-client";
 import { loginAccount, setStoredAccessToken } from "@/lib/services/accounts-service";
 
@@ -56,29 +59,30 @@ export function AccountLoginForm() {
   }
 
   return (
-    <div className={styles.page}>
-      <section className={styles.hero}>
-        <p className="eyebrow">Acceso cliente</p>
-        <h1 className="page-title">Ingresar al área cliente</h1>
-        <p className="page-lead">
-          Desde aquí podrás entrar al panel comercial o al espacio personal de tutores, según el
-          rol asociado a tu cuenta.
-        </p>
-      </section>
+    <PageShell>
+      <PageHero
+        eyebrow="Acceso cliente"
+        title="Ingresar al área cliente"
+        description="Desde aquí podrás entrar al panel comercial o al espacio personal de tutores, según el rol asociado a tu cuenta."
+      />
 
-      <section className={styles.formCard}>
-        <h2>Iniciar sesión</h2>
-        <form className={styles.form} onSubmit={handleSubmit}>
-          <div className={styles.formGrid}>
-            <div className={styles.field}>
-              <label htmlFor="email">Email</label>
-              <input id="email" name="email" type="email" required />
-            </div>
-            <div className={styles.field}>
-              <label htmlFor="password">Password</label>
-              <input id="password" name="password" type="password" required />
-            </div>
-          </div>
+      <SurfaceCard className="grid gap-4">
+        <h2 className="m-0 font-display-ui text-3xl leading-tight">Iniciar sesión</h2>
+        <form className="grid gap-4" onSubmit={handleSubmit}>
+          <FormGrid>
+            <FormField label="Email" htmlFor="email">
+              <input id="email" name="email" type="email" required className="form-control" />
+            </FormField>
+            <FormField label="Password" htmlFor="password">
+              <input
+                id="password"
+                name="password"
+                type="password"
+                required
+                className="form-control"
+              />
+            </FormField>
+          </FormGrid>
 
           <Button type="submit" disabled={loading}>
             {loading ? "Ingresando..." : "Entrar"}
@@ -87,7 +91,7 @@ export function AccountLoginForm() {
           {loading ? <LoadingPanel message="Validando acceso..." /> : null}
           {error ? <ErrorState message={error} /> : null}
         </form>
-      </section>
-    </div>
+      </SurfaceCard>
+    </PageShell>
   );
 }

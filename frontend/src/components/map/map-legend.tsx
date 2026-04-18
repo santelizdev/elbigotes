@@ -14,22 +14,25 @@ const CATEGORY_ICONS = {
 
 export function MapLegend({ categories }: { categories: CategoryDefinition[] }) {
   return (
-    <div className="map-legend">
+    <div className="flex flex-wrap items-center justify-end gap-3">
       {categories.filter((category) => category.kind === "place").map((category) => (
-        <span key={category.slug} className="map-legend__item">
+        <span
+          key={category.slug}
+          className="inline-flex items-center gap-2 rounded-full border border-app-border bg-[color-mix(in_srgb,var(--background-soft)_70%,var(--surface)_30%)] px-3 py-2 text-[0.84rem] font-bold text-app-text"
+        >
           {(() => {
             const Icon = CATEGORY_ICONS[category.slug as keyof typeof CATEGORY_ICONS];
 
             return (
               <>
                 <span
-                  className="map-legend__icon"
+                  className="inline-grid h-4 w-4 shrink-0 place-items-center"
                   style={{ color: category.accent }}
                   aria-hidden="true"
                 >
                   {Icon ? <Icon /> : null}
                 </span>
-                <span className="map-legend__label">{category.shortLabel}</span>
+                <span className="text-app-text-soft">{category.shortLabel}</span>
               </>
             );
           })()}

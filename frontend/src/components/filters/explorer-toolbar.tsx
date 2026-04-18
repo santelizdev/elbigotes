@@ -3,6 +3,7 @@
 import { ChangeEvent } from "react";
 
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils/cn";
 
 interface ExplorerToolbarProps {
   region: string;
@@ -48,14 +49,17 @@ export function ExplorerToolbar({
       : "Primero elige una region o comuna, o activa 'Usar mi direccion' para delimitar la busqueda por radio.");
 
   return (
-    <div className="toolbar">
+    <div className="grid items-end gap-4 xl:grid-cols-[auto_minmax(210px,1.1fr)_minmax(190px,1fr)_minmax(170px,0.8fr)_auto]">
       <Button onClick={onLocationToggle} type="button" variant="secondary">
         {locating ? "Ubicando..." : hasUserLocation ? "Quitar mi direccion" : "Usar mi direccion"}
       </Button>
 
-      <label className="toolbar__field">
-        <span className="toolbar__label">Region</span>
+      <label className="grid min-w-0 gap-1.5">
+        <span className="text-[0.76rem] font-bold uppercase tracking-[0.08em] text-app-text-muted">
+          Region
+        </span>
         <select
+          className="form-control rounded-full"
           value={region}
           onChange={(event: ChangeEvent<HTMLSelectElement>) => onRegionChange(event.target.value)}
         >
@@ -70,9 +74,12 @@ export function ExplorerToolbar({
         </select>
       </label>
 
-      <label className="toolbar__field">
-        <span className="toolbar__label">Comuna</span>
+      <label className="grid min-w-0 gap-1.5">
+        <span className="text-[0.76rem] font-bold uppercase tracking-[0.08em] text-app-text-muted">
+          Comuna
+        </span>
         <select
+          className="form-control rounded-full disabled:cursor-not-allowed disabled:opacity-60"
           value={commune}
           onChange={(event: ChangeEvent<HTMLSelectElement>) => onCommuneChange(event.target.value)}
           disabled={!region}
@@ -90,9 +97,12 @@ export function ExplorerToolbar({
         </select>
       </label>
 
-      <label className="toolbar__field">
-        <span className="toolbar__label">Radio</span>
+      <label className="grid min-w-0 gap-1.5">
+        <span className="text-[0.76rem] font-bold uppercase tracking-[0.08em] text-app-text-muted">
+          Radio
+        </span>
         <select
+          className="form-control rounded-full disabled:cursor-not-allowed disabled:opacity-60"
           value={radiusKm ?? ""}
           onChange={(event: ChangeEvent<HTMLSelectElement>) =>
             onRadiusChange(event.target.value ? Number(event.target.value) : null)
@@ -107,16 +117,17 @@ export function ExplorerToolbar({
         </select>
       </label>
 
-      <label className="toolbar__toggle">
+      <label className="inline-flex min-h-[3rem] items-center gap-3 text-app-text-soft">
         <input
           type="checkbox"
           checked={showOnlyVerified}
           onChange={(event) => onVerifiedChange(event.target.checked)}
+          className="h-4 w-4 rounded border-app-border-strong accent-[var(--accent-emerald)]"
         />
         <span>Solo fichas verificadas</span>
       </label>
 
-      <p className="toolbar__helper">{helperMessage}</p>
+      <p className={cn("m-0 text-sm text-app-text-muted xl:col-span-full")}>{helperMessage}</p>
     </div>
   );
 }

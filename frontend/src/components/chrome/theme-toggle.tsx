@@ -17,7 +17,8 @@ export function ThemeToggle() {
 }
 
 export function ThemeToggleButton({ compact = false }: { compact?: boolean }) {
-  const [theme, setTheme] = useState<ThemeMode>(() => getInitialTheme());
+  // Start from a stable SSR-safe value and sync once the client mounts.
+  const [theme, setTheme] = useState<ThemeMode>("light");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {

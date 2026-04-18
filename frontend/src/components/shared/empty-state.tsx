@@ -1,3 +1,5 @@
+import { FeedbackPanel } from "@/components/ui/feedback-panel";
+
 export function EmptyState({
   title,
   message,
@@ -5,11 +7,5 @@ export function EmptyState({
   title: string;
   message: string;
 }) {
-  return (
-    <div className="feedback-panel">
-      <p className="feedback-panel__title">{title}</p>
-      <p>{message}</p>
-    </div>
-  );
+  return <FeedbackPanel title={title} message={<p className="m-0">{message}</p>} />;
 }
-

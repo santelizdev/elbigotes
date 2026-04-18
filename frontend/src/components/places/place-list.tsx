@@ -2,11 +2,14 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { PlaceGoogleRating } from "@/components/places/place-google-rating";
-import styles from "@/components/places/place-list.module.css";
 import { EmptyState } from "@/components/shared/empty-state";
 import { LoadingPanel } from "@/components/shared/loading-panel";
+import { SkeletonCard, SkeletonLine } from "@/components/ui/skeleton-card";
 import { StatusPill } from "@/components/ui/status-pill";
+import { SurfaceCard } from "@/components/ui/surface-card";
 import { Tag } from "@/components/ui/tag";
+import { TextButton } from "@/components/ui/text-button";
+import { cn } from "@/lib/utils/cn";
 import { Place } from "@/lib/types";
 import { getPlaceVerificationLabel, getPlaceVerificationTone } from "@/lib/utils/place-verification";
 import { formatDistance, titleCase } from "@/lib/utils/formatters";
@@ -94,12 +97,12 @@ export function PlaceList({
       <div className="stack-lg" aria-hidden="true">
         <LoadingPanel message="Actualizando resultados sobre el mapa..." />
         {Array.from({ length: 4 }, (_, index) => (
-          <article key={index} className="skeleton-card">
-            <div className="skeleton-card__line skeleton-card__line--eyebrow" />
-            <div className="skeleton-card__line skeleton-card__line--title" />
-            <div className="skeleton-card__line skeleton-card__line--body" />
-            <div className="skeleton-card__line skeleton-card__line--body" />
-          </article>
+          <SkeletonCard key={index}>
+            <SkeletonLine width="eyebrow" />
+            <SkeletonLine width="title" size="title" />
+            <SkeletonLine />
+            <SkeletonLine />
+          </SkeletonCard>
         ))}
       </div>
     );
@@ -121,13 +124,13 @@ export function PlaceList({
   const paginationItems = buildPagination(currentPage, totalPages);
 
   return (
-    <div className={styles.list}>
+    <div className="grid gap-4">
       {featuredPlace ? (
-        <article className={styles.featured}>
-          <div className={styles.featuredHeader}>
+        <SurfaceCard className="grid gap-4 border-[color-mix(in_srgb,var(--accent-emerald)_20%,var(--border))] bg-app-surface-raised p-5 shadow-[0_16px_28px_color-mix(in_srgb,var(--accent-emerald)_12%,transparent)]">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <p className="eyebrow">{titleCase(featuredPlace.category)}</p>
-              <h3 className={styles.featuredTitle}>{featuredPlace.name}</h3>
+              <h3 className="m-[0.2rem_0_0] text-[1.25rem] leading-[1.1]">{featuredPlace.name}</h3>
             </div>
             {featuredPlace.isEmergencyService ? (
               <StatusPill label="24/7" tone="critical" />
@@ -139,12 +142,12 @@ export function PlaceList({
             )}
           </div>
 
-          <div className={styles.featuredMeta}>
+          <div className="flex flex-wrap gap-x-4 gap-y-2 text-[0.94rem] text-app-text-muted">
             <span>{featuredPlace.formattedAddress}</span>
             <span>{formatDistance(featuredPlace.distanceKm)}</span>
           </div>
 
-          <p className={styles.featuredSummary}>
+          <p className="m-0 text-[0.98rem] leading-7 text-app-text-soft">
             {featuredPlace.description || featuredPlace.summary || "Ficha en construcción con datos básicos verificados."}
           </p>
 
@@ -160,12 +163,12 @@ export function PlaceList({
           </div>
 
           {featuredPlace.contactPoints.length ? (
-            <div className={styles.featuredContacts}>
+            <div className="flex flex-wrap gap-2">
               {featuredPlace.contactPoints.slice(0, 2).map((contact) => (
                 <a
                   key={`${contact.kind}-${contact.value}`}
                   href={getContactHref(contact.kind, contact.value)}
-                  className={styles.featuredContact}
+                  className="inline-flex items-center rounded-full border border-app-border bg-[color-mix(in_srgb,var(--background-soft)_72%,#ffffff)] px-3 py-2 text-[0.9rem] text-app-text-soft no-underline"
                 >
                   {contact.label}: {contact.value}
                 </a>
@@ -173,42 +176,44 @@ export function PlaceList({
             </div>
           ) : null}
 
-          <div className={styles.featuredFooter}>
-            <button className="text-button" onClick={() => onSelectPlace(featuredPlace)} type="button">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <TextButton onClick={() => onSelectPlace(featuredPlace)}>
               Ver ficha rápida
-            </button>
+            </TextButton>
             {featuredPlaceCanClaim ? (
-              <Link href={`/lugares/${featuredPlace.slug}/reclamar`} className={styles.featuredLink}>
+              <Link
+                href={`/lugares/${featuredPlace.slug}/reclamar`}
+                className="font-bold text-brand-secondary no-underline"
+              >
                 Reclamar propiedad
               </Link>
             ) : null}
-            <Link href={`/lugares/${featuredPlace.slug}`} className={styles.featuredLink}>
+            <Link href={`/lugares/${featuredPlace.slug}`} className="font-bold text-brand-secondary no-underline">
               Abrir detalle
             </Link>
           </div>
-        </article>
+        </SurfaceCard>
       ) : null}
 
       {compactPlaces.length ? (
-        <div className={styles.compactList}>
+        <div className="grid gap-3">
           {compactPlaces.map((place) => (
             <button
               key={place.slug}
               type="button"
               onClick={() => onSelectPlace(place)}
-              className={[
-                styles.compactCard,
-                compactPlaces[0]?.slug === place.slug ? styles.compactCardStrong : "",
-              ]
-                .filter(Boolean)
-                .join(" ")}
+              className={cn(
+                "grid w-full cursor-pointer gap-3 rounded-2xl border border-app-border bg-[color-mix(in_srgb,var(--surface)_90%,transparent)] p-4 text-left text-app-text transition duration-150 hover:-translate-y-px hover:border-[color-mix(in_srgb,var(--accent-emerald)_28%,var(--border-strong))] sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center",
+                compactPlaces[0]?.slug === place.slug &&
+                  "min-h-[4.8rem] shadow-[0_14px_28px_color-mix(in_srgb,var(--accent-emerald)_10%,transparent)]",
+              )}
             >
-              <div className={styles.compactOrder}>
+              <div className="inline-flex min-w-[4.7rem] items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--accent-emerald)_12%,transparent)] px-3 py-2 text-[0.8rem] font-extrabold text-[var(--accent-emerald)]">
                 Ficha #{places.findIndex((item) => item.slug === place.slug) + 1}
               </div>
-              <div className={styles.compactBody}>
-                <strong className={styles.compactTitle}>{place.name}</strong>
-                <span className={styles.compactAddress}>{place.formattedAddress}</span>
+              <div className="grid min-w-0 gap-1">
+                <strong className="text-[0.98rem] leading-5">{place.name}</strong>
+                <span className="text-[0.88rem] leading-6 text-app-text-muted">{place.formattedAddress}</span>
                 <PlaceGoogleRating
                   rating={place.googleRating}
                   reviewsCount={place.googleReviewsCount}
@@ -221,33 +226,31 @@ export function PlaceList({
       ) : null}
 
       {totalPages > 1 ? (
-        <nav className={styles.pagination} aria-label="Paginas de resultados">
+        <nav className="grid items-center gap-3 pt-1 md:grid-cols-[auto_minmax(0,1fr)_auto]" aria-label="Paginas de resultados">
           <button
             type="button"
-            className={styles.paginationArrow}
+            className="min-h-[2.4rem] rounded-full border border-app-border bg-[color-mix(in_srgb,var(--surface)_92%,transparent)] px-4 py-2 text-app-text disabled:cursor-not-allowed disabled:opacity-45"
             onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
             disabled={currentPage === 1}
           >
             Atras
           </button>
 
-          <div className={styles.paginationPages}>
+          <div className="flex flex-wrap justify-center gap-2">
             {paginationItems.map((page, index) => {
               const previous = paginationItems[index - 1];
               const showEllipsis = previous !== undefined && page - previous > 1;
 
               return (
-                <div key={page} className={styles.paginationChunk}>
-                  {showEllipsis ? <span className={styles.paginationEllipsis}>...</span> : null}
+                <div key={page} className="inline-flex items-center gap-2">
+                  {showEllipsis ? <span className="font-bold text-app-text-muted">...</span> : null}
                   <button
                     type="button"
                     onClick={() => setCurrentPage(page)}
-                    className={[
-                      styles.paginationPage,
-                      page === currentPage ? styles.paginationPageActive : "",
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
+                    className={cn(
+                      "min-h-[2.4rem] min-w-[2.4rem] rounded-full border border-app-border bg-[color-mix(in_srgb,var(--surface)_92%,transparent)] px-3 py-2 text-app-text",
+                      page === currentPage && "border-transparent bg-[var(--accent-emerald)] text-white",
+                    )}
                     aria-current={page === currentPage ? "page" : undefined}
                   >
                     {page}
@@ -259,7 +262,7 @@ export function PlaceList({
 
           <button
             type="button"
-            className={styles.paginationArrow}
+            className="min-h-[2.4rem] rounded-full border border-app-border bg-[color-mix(in_srgb,var(--surface)_92%,transparent)] px-4 py-2 text-app-text disabled:cursor-not-allowed disabled:opacity-45"
             onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
             disabled={currentPage === totalPages}
           >

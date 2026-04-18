@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { FaSearch } from "react-icons/fa";
 
-import styles from "@/components/explorer/map-explorer.module.css";
 import { ExplorerToolbar } from "@/components/filters/explorer-toolbar";
 import { CategoryFilterBar } from "@/components/filters/category-filter-bar";
 import { LeafletMap } from "@/components/map/leaflet-map";
@@ -11,6 +10,11 @@ import { MapLegend } from "@/components/map/map-legend";
 import { PlaceList } from "@/components/places/place-list";
 import { ErrorState } from "@/components/shared/error-state";
 import { Button } from "@/components/ui/button";
+import { FeedbackPanel } from "@/components/ui/feedback-panel";
+import { PageHero } from "@/components/ui/page-hero";
+import { PageShell } from "@/components/ui/page-shell";
+import { SectionHeader } from "@/components/ui/section-header";
+import { SurfaceCard } from "@/components/ui/surface-card";
 import { CATEGORY_DEFINITIONS, CategoryDefinition } from "@/lib/constants/categories";
 import { Place } from "@/lib/types";
 import { usePlacesQuery } from "@/hooks/use-places-query";
@@ -86,10 +90,8 @@ export function MapExplorerPage({
     });
 
   return (
-    <div className={styles.page}>
-      <div className={styles.sectionIntro}>
-        <h2 className={styles.sectionTitle}>Que buscas para tu Mascota?</h2>
-      </div>
+    <PageShell className="gap-5 pt-5">
+      <SectionHeader title="Que buscas para tu Mascota?" />
 
       <CategoryFilterBar
         categories={categories}
@@ -116,15 +118,15 @@ export function MapExplorerPage({
         onVerifiedChange={setShowOnlyVerified}
       />
 
-      <div className={styles.workspace}>
-        <aside className={styles.sidebar}>
-          <section className={styles.panel}>
-            <div className={styles.panelHeader}>
+      <div className="grid min-h-[40rem] gap-4 xl:grid-cols-[minmax(420px,0.96fr)_minmax(0,1.1fr)]">
+        <aside className="grid content-start gap-4">
+          <SurfaceCard className="grid gap-4 p-4">
+            <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
               <div>
                 <p className="eyebrow">Resultados del mapa</p>
-                <h2 className={styles.panelTitle}>Listado operativo</h2>
+                <h2 className="m-0 pt-1 font-display-ui text-[1.08rem]">Listado operativo</h2>
               </div>
-              <span className={styles.panelCaption}>{places.length} resultados</span>
+              <span className="text-[0.92rem] text-app-text-muted">{places.length} resultados</span>
             </div>
 
             {error ? (
@@ -137,10 +139,10 @@ export function MapExplorerPage({
                 onSelectPlace={setSelectedPlace}
               />
             )}
-          </section>
+          </SurfaceCard>
         </aside>
 
-        <section className={styles.mapPanel}>
+        <section className="relative isolate overflow-hidden rounded-[1.6rem] border border-white/8 bg-app-bg min-h-[40rem] max-xl:order-[-1] max-xl:min-h-[32rem] max-md:min-h-[26rem]">
           {points.length ? (
             <LeafletMap
               points={points}
@@ -153,36 +155,36 @@ export function MapExplorerPage({
               }}
             />
           ) : (
-            <div className="feedback-panel">
-              No hay puntos geolocalizados para mostrar en este mapa con los filtros actuales.
-            </div>
+            <FeedbackPanel message="No hay puntos geolocalizados para mostrar en este mapa con los filtros actuales." className="m-5" />
           )}
-        </section>
-
-        <section className={styles.mapPanelMeta} aria-label="Contexto del mapa">
-          <div className={styles.mapChip}>
-            <strong>Mapa activo</strong>
-            <span className={styles.mapHint}>Explora puntos verificados por categoría</span>
-          </div>
-          <MapLegend categories={categories} />
         </section>
       </div>
 
-      <section className={styles.hero}>
-        <div className={styles.heroTop}>
-          <div>
-            <p className="eyebrow">Infraestructura pública pet en Chile</p>
-            <h1 className={styles.heroTitle}>{title}</h1>
-            <p className={styles.heroLead}>{description}</p>
-          </div>
+      <SurfaceCard
+        className="flex flex-wrap items-center justify-between gap-4 rounded-[1.35rem] px-4 py-4 max-xl:order-[-1]"
+        aria-label="Contexto del mapa"
+      >
+        <div className="inline-flex items-center gap-2 rounded-full border border-app-border bg-[color-mix(in_srgb,var(--background-soft)_78%,var(--surface)_22%)] px-4 py-3 text-app-text">
+          <strong className="text-[0.95rem]">Mapa activo</strong>
+          <span className="text-[0.84rem] text-app-text-muted">
+            Explora puntos verificados por categoría
+          </span>
+        </div>
+        <MapLegend categories={categories} />
+      </SurfaceCard>
 
-          <div className={styles.heroActions}>
+      <PageHero
+        eyebrow="Infraestructura pública pet en Chile"
+        title={title}
+        description={description}
+        actions={
+          <div className="flex flex-wrap items-center gap-3">
             <Button
               href="/mascotas-perdidas"
               variant="secondary"
-              className={styles.heroPrimaryAction}
+              className="border-white bg-white text-[#102127] shadow-[0_18px_34px_rgba(255,255,255,0.18)] hover:bg-white dark:border-transparent dark:bg-[linear-gradient(135deg,var(--accent-emerald),#106b78)] dark:text-white dark:shadow-[0_18px_34px_color-mix(in_srgb,var(--accent-emerald)_24%,transparent)]"
             >
-              <span className={styles.actionIcon} aria-hidden="true">
+              <span className="mr-2 inline-flex items-center justify-center align-middle" aria-hidden="true">
                 <FaSearch />
               </span>
               Ver publicaciones activas
@@ -190,13 +192,14 @@ export function MapExplorerPage({
             <Button
               href="/publicar-mascota-perdida"
               variant="secondary"
-              className={styles.heroSecondaryAction}
+              className="border-app-border-strong bg-transparent text-app-text hover:bg-[color-mix(in_srgb,var(--surface)_90%,transparent)]"
             >
               Publicar una mascota perdida
             </Button>
           </div>
-        </div>
-      </section>
-    </div>
+        }
+        className="gap-5 rounded-[1.6rem] border-[color-mix(in_srgb,var(--accent-emerald)_18%,transparent)] bg-[radial-gradient(circle_at_top_left,color-mix(in_srgb,var(--accent-emerald)_16%,transparent),transparent_28%),radial-gradient(circle_at_top_right,color-mix(in_srgb,var(--accent-emerald)_9%,transparent),transparent_26%),linear-gradient(180deg,color-mix(in_srgb,var(--background-soft)_96%,transparent),color-mix(in_srgb,var(--background)_98%,transparent))]"
+      />
+    </PageShell>
   );
 }

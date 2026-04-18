@@ -2,11 +2,15 @@
 
 import { FormEvent, useState } from "react";
 
-import styles from "@/components/accounts/registration.module.css";
 import { LocationPicker } from "@/components/map/location-picker";
 import { ErrorState } from "@/components/shared/error-state";
 import { LoadingPanel } from "@/components/shared/loading-panel";
 import { Button } from "@/components/ui/button";
+import { DashboardGrid } from "@/components/ui/dashboard-grid";
+import { FormCheckbox, FormField, FormGrid, InfoBox } from "@/components/ui/form-primitives";
+import { PageHero } from "@/components/ui/page-hero";
+import { PageShell } from "@/components/ui/page-shell";
+import { SurfaceCard } from "@/components/ui/surface-card";
 import {
   BusinessRegistrationPayload,
   RegistrationCatalogItem,
@@ -85,162 +89,173 @@ export function BusinessRegistrationForm({
   }
 
   return (
-    <div className={styles.page}>
-      <section className={styles.hero}>
-        <p className="eyebrow">Registro comercial</p>
-        <h1 className="page-title">Alta de negocio u organización</h1>
-        <p className="page-lead">
-          Este flujo separa los negocios con membresía potencial de los actores comunitarios que
-          quedarán siempre gratuitos, para que el modelo comercial nazca ordenado desde el inicio.
-        </p>
-        <div className={styles.heroActions}>
+    <PageShell>
+      <PageHero
+        eyebrow="Registro comercial"
+        title="Alta de negocio u organización"
+        description="Este flujo separa los negocios con membresía potencial de los actores comunitarios que quedarán siempre gratuitos, para que el modelo comercial nazca ordenado desde el inicio."
+        actions={
           <Button href="/registro" variant="ghost">
             Volver a tipos de cuenta
           </Button>
-        </div>
-      </section>
+        }
+      />
 
-      <div className={styles.grid}>
-        <section className={styles.formCard}>
-          <p className="eyebrow">Datos de alta</p>
-          <h2>Crear cuenta comercial</h2>
-          <form className={styles.form} onSubmit={handleSubmit}>
-            <div className={styles.formGrid}>
-              <div className={styles.field}>
-                <label htmlFor="first_name">Nombre responsable</label>
-                <input id="first_name" name="first_name" required />
-              </div>
-              <div className={styles.field}>
-                <label htmlFor="last_name">Apellido</label>
-                <input id="last_name" name="last_name" />
-              </div>
-              <div className={styles.field}>
-                <label htmlFor="email">Email</label>
-                <input id="email" name="email" type="email" required />
-              </div>
-              <div className={styles.field}>
-                <label htmlFor="password">Password</label>
-                <input id="password" name="password" type="password" minLength={8} required />
-              </div>
-              <div className={styles.field}>
-                <label htmlFor="business_name">Nombre comercial</label>
-                <input id="business_name" name="business_name" required />
-              </div>
-              <div className={styles.field}>
-                <label htmlFor="business_kind">Tipo de cuenta</label>
-                <select
-                  id="business_kind"
-                  name="business_kind"
-                  value={selectedKind}
-                  onChange={(event) => setSelectedKind(event.target.value)}
-                >
-                  {businessKinds.map((kind) => (
-                    <option key={kind.value} value={kind.value}>
-                      {kind.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className={styles.field}>
-                <label htmlFor="phone">Teléfono</label>
-                <input id="phone" name="phone" required />
-              </div>
-              <div className={styles.field}>
-                <label htmlFor="commune">Comuna</label>
-                <select id="commune" name="commune" required>
-                  <option value="">Selecciona una comuna</option>
-                  {getCommunesForRegion(selectedRegion).map((commune) => (
-                    <option key={commune} value={commune}>
-                      {commune}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className={styles.field}>
-                <label htmlFor="region">Región</label>
-                <select
-                  id="region"
-                  name="region"
-                  value={selectedRegion}
-                  onChange={(event) => setSelectedRegion(event.target.value)}
-                >
-                  {CHILE_REGIONS.map((item) => (
-                    <option key={item.region} value={item.region}>
-                      {item.region}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className={styles.field}>
-                <label htmlFor="website">Sitio web</label>
-                <input id="website" name="website" type="url" />
-                <span className={styles.helper}>Opcional. Si no tienes web, déjalo vacío.</span>
-              </div>
-              <div className={styles.fieldFull}>
-                <label htmlFor="notes">Notas operativas</label>
-                <textarea
-                  id="notes"
-                  name="notes"
-                  placeholder="Ej: servicio 24/7, cobertura comunal, tipo de atención, etc."
-                />
-              </div>
-              <div className={styles.fieldFull}>
-                <label>Ubicación pública</label>
-                <div className={styles.mapPicker}>
-                  <LocationPicker
-                    latitude={selectedLatitude}
-                    longitude={selectedLongitude}
-                    onChange={(latitude, longitude) => {
-                      setSelectedLatitude(latitude);
-                      setSelectedLongitude(longitude);
-                    }}
+      <DashboardGrid
+        main={
+          <SurfaceCard className="grid gap-4">
+            <p className="eyebrow">Datos de alta</p>
+            <h2 className="m-0 font-display-ui text-3xl leading-tight">Crear cuenta comercial</h2>
+            <form className="grid gap-4" onSubmit={handleSubmit}>
+              <FormGrid>
+                <FormField label="Nombre responsable" htmlFor="first_name">
+                  <input id="first_name" name="first_name" required className="form-control" />
+                </FormField>
+                <FormField label="Apellido" htmlFor="last_name">
+                  <input id="last_name" name="last_name" className="form-control" />
+                </FormField>
+                <FormField label="Email" htmlFor="email">
+                  <input id="email" name="email" type="email" required className="form-control" />
+                </FormField>
+                <FormField label="Password" htmlFor="password">
+                  <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    minLength={8}
+                    required
+                    className="form-control"
                   />
-                </div>
-                <span className={styles.helper}>
-                  Haz clic en el mapa para fijar la ubicación real. Sin geocodificación externa, la
-                  ficha pública se mostrará con comuna, región y punto confirmado en mapa.
-                </span>
-                <div className={styles.statusBox}>
-                  {selectedLatitude !== undefined && selectedLongitude !== undefined
-                    ? `Punto seleccionado: ${selectedLatitude.toFixed(6)}, ${selectedLongitude.toFixed(6)}`
-                    : "Aún no hay punto seleccionado."}
-                </div>
-              </div>
-            </div>
+                </FormField>
+                <FormField label="Nombre comercial" htmlFor="business_name">
+                  <input id="business_name" name="business_name" required className="form-control" />
+                </FormField>
+                <FormField label="Tipo de cuenta" htmlFor="business_kind">
+                  <select
+                    id="business_kind"
+                    name="business_kind"
+                    value={selectedKind}
+                    onChange={(event) => setSelectedKind(event.target.value)}
+                    className="form-control"
+                  >
+                    {businessKinds.map((kind) => (
+                      <option key={kind.value} value={kind.value}>
+                        {kind.label}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+                <FormField label="Teléfono" htmlFor="phone">
+                  <input id="phone" name="phone" required className="form-control" />
+                </FormField>
+                <FormField label="Comuna" htmlFor="commune">
+                  <select id="commune" name="commune" required className="form-control">
+                    <option value="">Selecciona una comuna</option>
+                    {getCommunesForRegion(selectedRegion).map((commune) => (
+                      <option key={commune} value={commune}>
+                        {commune}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+                <FormField label="Región" htmlFor="region">
+                  <select
+                    id="region"
+                    name="region"
+                    value={selectedRegion}
+                    onChange={(event) => setSelectedRegion(event.target.value)}
+                    className="form-control"
+                  >
+                    {CHILE_REGIONS.map((item) => (
+                      <option key={item.region} value={item.region}>
+                        {item.region}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+                <FormField
+                  label="Sitio web"
+                  htmlFor="website"
+                  helper="Opcional. Si no tienes web, déjalo vacío."
+                >
+                  <input id="website" name="website" type="url" className="form-control" />
+                </FormField>
+                <FormField
+                  label="Notas operativas"
+                  htmlFor="notes"
+                  fullWidth
+                >
+                  <textarea
+                    id="notes"
+                    name="notes"
+                    placeholder="Ej: servicio 24/7, cobertura comunal, tipo de atención, etc."
+                    className="form-control min-h-28 resize-y"
+                  />
+                </FormField>
+                <FormField
+                  label="Ubicación pública"
+                  fullWidth
+                  helper="Haz clic en el mapa para fijar la ubicación real. Sin geocodificación externa, la ficha pública se mostrará con comuna, región y punto confirmado en mapa."
+                >
+                  <div className="overflow-hidden rounded-[1.1rem] border border-app-border-strong min-h-[280px]">
+                    <LocationPicker
+                      latitude={selectedLatitude}
+                      longitude={selectedLongitude}
+                      onChange={(latitude, longitude) => {
+                        setSelectedLatitude(latitude);
+                        setSelectedLongitude(longitude);
+                      }}
+                    />
+                  </div>
+                  <InfoBox className="mt-2">
+                    {selectedLatitude !== undefined && selectedLongitude !== undefined
+                      ? `Punto seleccionado: ${selectedLatitude.toFixed(6)}, ${selectedLongitude.toFixed(6)}`
+                      : "Aún no hay punto seleccionado."}
+                  </InfoBox>
+                </FormField>
+              </FormGrid>
 
-            <label className={styles.checkbox} htmlFor="marketing_opt_in">
-              <input id="marketing_opt_in" name="marketing_opt_in" type="checkbox" defaultChecked />
-              <span>Recibir novedades del producto y futuras opciones comerciales</span>
-            </label>
+              <FormCheckbox htmlFor="marketing_opt_in">
+                <input
+                  id="marketing_opt_in"
+                  name="marketing_opt_in"
+                  type="checkbox"
+                  defaultChecked
+                  className="h-4 w-4 rounded border-app-border-strong accent-[var(--accent-emerald)]"
+                />
+                <span>Recibir novedades del producto y futuras opciones comerciales</span>
+              </FormCheckbox>
 
-            <Button type="submit" disabled={loading}>
-              {loading ? "Creando cuenta..." : "Crear cuenta comercial"}
-            </Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? "Creando cuenta..." : "Crear cuenta comercial"}
+              </Button>
 
-            {loading ? <LoadingPanel message="Registrando negocio..." /> : null}
-            {error ? <ErrorState message={error} /> : null}
-            {successMessage ? <div className="success-banner">{successMessage}</div> : null}
-          </form>
-        </section>
+              {loading ? <LoadingPanel message="Registrando negocio..." /> : null}
+              {error ? <ErrorState message={error} /> : null}
+              {successMessage ? <div className="success-banner">{successMessage}</div> : null}
+            </form>
+          </SurfaceCard>
+        }
+        aside={
+          <>
+            <SurfaceCard className="grid gap-3">
+              <h3 className="m-0 font-display-ui text-2xl leading-tight">Operación comercial</h3>
+              <InfoBox>
+                La cuenta queda creada y la asignación de planes se administra desde membresías, no
+                desde el perfil comercial.
+              </InfoBox>
+            </SurfaceCard>
 
-        <aside className={styles.aside}>
-          <section className={styles.asideCard}>
-            <h3>Operación comercial</h3>
-            <div className={styles.statusBox}>
-              La cuenta queda creada y la asignación de planes se administra desde membresías, no
-              desde el perfil comercial.
-            </div>
-          </section>
-
-          <section className={styles.asideCard}>
-            <h3>Qué deja listo este alta</h3>
-            <p>
-              Se crea el usuario, el perfil comercial y la ficha base para que luego puedas sumar
-              sucursales y asignaciones de membresía sin lógica duplicada.
-            </p>
-          </section>
-        </aside>
-      </div>
-    </div>
+            <SurfaceCard className="grid gap-3">
+              <h3 className="m-0 font-display-ui text-2xl leading-tight">Qué deja listo este alta</h3>
+              <p className="m-0 leading-7 text-app-text-soft">
+                Se crea el usuario, el perfil comercial y la ficha base para que luego puedas sumar
+                sucursales y asignaciones de membresía sin lógica duplicada.
+              </p>
+            </SurfaceCard>
+          </>
+        }
+      />
+    </PageShell>
   );
 }

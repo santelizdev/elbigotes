@@ -2,11 +2,15 @@
 
 import { useEffect, useState } from "react";
 
-import styles from "@/components/accounts/registration.module.css";
 import { AccountAccessNotice } from "@/components/accounts/account-access-notice";
 import { ErrorState } from "@/components/shared/error-state";
 import { LoadingPanel } from "@/components/shared/loading-panel";
 import { Button } from "@/components/ui/button";
+import { DashboardGrid } from "@/components/ui/dashboard-grid";
+import { PageHero } from "@/components/ui/page-hero";
+import { PageShell } from "@/components/ui/page-shell";
+import { SectionHeader } from "@/components/ui/section-header";
+import { SurfaceCard } from "@/components/ui/surface-card";
 import {
   BusinessWorkspaceResponse,
   clearStoredAccessToken,
@@ -75,11 +79,7 @@ export function BusinessDashboard() {
   }
 
   if (error || !workspace) {
-    return (
-      <div className={styles.page}>
-        <ErrorState message={error ?? "No pudimos cargar el panel comercial."} />
-      </div>
-    );
+    return <ErrorState message={error ?? "No pudimos cargar el panel comercial."} />;
   }
 
   const primaryPlace = workspace.places.find((place) => place.is_primary);
@@ -120,66 +120,77 @@ export function BusinessDashboard() {
           : `Estado actual: ${currentMembership.status}.`;
 
   return (
-    <div className={styles.page}>
-      <section className={styles.hero}>
-        <p className="eyebrow">Área cliente</p>
-        <h1 className="page-title">{workspace.profile.business_name}</h1>
-        <p className="page-lead">
-          Este panel concentra tu estado comercial, la publicación principal y las sucursales
-          asociadas a la cuenta.
-        </p>
-        <div className={styles.heroActions}>
-          <Button href="/mi-negocio/editar" variant="secondary">
-            Editar datos
-          </Button>
-          <Button href="/mi-negocio/sucursales/nueva" variant="primary">
-            Añadir sucursal
-          </Button>
-        </div>
-      </section>
+    <PageShell>
+      <PageHero
+        eyebrow="Área cliente"
+        title={workspace.profile.business_name}
+        description="Este panel concentra tu estado comercial, la publicación principal y las sucursales asociadas a la cuenta."
+        actions={
+          <>
+            <Button href="/mi-negocio/editar" variant="secondary">
+              Editar datos
+            </Button>
+            <Button href="/mi-negocio/sucursales/nueva" variant="primary">
+              Añadir sucursal
+            </Button>
+          </>
+        }
+      />
 
-      <section className={styles.cards}>
-        <article className={styles.card}>
+      <section className="grid gap-4 md:grid-cols-3">
+        <SurfaceCard className="grid gap-3">
           <p className="eyebrow">Membresía</p>
-          <h3>{membershipHeadline}</h3>
-          <p>{membershipCopy}</p>
-        </article>
+          <h3 className="m-0 font-display-ui text-3xl leading-tight">{membershipHeadline}</h3>
+          <p className="m-0 leading-7 text-app-text-soft">{membershipCopy}</p>
+        </SurfaceCard>
 
-        <article className={styles.card}>
+        <SurfaceCard className="grid gap-3">
           <p className="eyebrow">Ficha principal</p>
-          <h3>{primaryPlace?.status === "active" ? "Publicada" : "En revisión"}</h3>
-          <p>
+          <h3 className="m-0 font-display-ui text-3xl leading-tight">
+            {primaryPlace?.status === "active" ? "Publicada" : "En revisión"}
+          </h3>
+          <p className="m-0 leading-7 text-app-text-soft">
             {primaryPlace
               ? `${primaryPlace.formatted_address || `${primaryPlace.commune}, ${primaryPlace.region}`}`
               : "Aún no hay una ficha principal vinculada."}
           </p>
-        </article>
+        </SurfaceCard>
 
-        <article className={styles.card}>
+        <SurfaceCard className="grid gap-3">
           <p className="eyebrow">Sucursales</p>
-          <h3>{workspace.places.length}</h3>
-          <p>Todas las fichas nuevas quedan en revisión manual antes de mostrarse al público.</p>
-        </article>
+          <h3 className="m-0 font-display-ui text-3xl leading-tight">{workspace.places.length}</h3>
+          <p className="m-0 leading-7 text-app-text-soft">
+            Todas las fichas nuevas quedan en revisión manual antes de mostrarse al público.
+          </p>
+        </SurfaceCard>
       </section>
 
-      <section className={styles.formCard}>
-        <p className="eyebrow">Tus fichas</p>
-        <h2>Publicaciones y sucursales</h2>
-        <div className={styles.stackList}>
-          {workspace.places.map((place) => (
-            <article key={place.slug} className={styles.listCard}>
-              <div>
-                <strong>{place.name}</strong>
-                <p>{place.formatted_address || `${place.commune}, ${place.region}`}</p>
-              </div>
-              <span className={styles.statusBox}>
-                {place.is_primary ? "Principal" : "Sucursal"} ·{" "}
-                {place.status === "active" ? "Publicada" : "En revisión"}
-              </span>
-            </article>
-          ))}
-        </div>
-      </section>
-    </div>
+      <DashboardGrid
+        main={
+          <SurfaceCard className="grid gap-4">
+            <SectionHeader eyebrow="Tus fichas" title="Publicaciones y sucursales" />
+            <div className="grid gap-3">
+              {workspace.places.map((place) => (
+                <article
+                  key={place.slug}
+                  className="flex flex-col gap-3 rounded-2xl border border-app-border bg-[color-mix(in_srgb,var(--surface-raised)_88%,transparent)] p-4 md:flex-row md:items-center md:justify-between"
+                >
+                  <div>
+                    <strong>{place.name}</strong>
+                    <p className="m-0 text-app-text-soft">
+                      {place.formatted_address || `${place.commune}, ${place.region}`}
+                    </p>
+                  </div>
+                  <span className="rounded-2xl border border-brand-primary/20 bg-brand-primary/10 px-4 py-2 text-sm text-app-text-soft">
+                    {place.is_primary ? "Principal" : "Sucursal"} ·{" "}
+                    {place.status === "active" ? "Publicada" : "En revisión"}
+                  </span>
+                </article>
+              ))}
+            </div>
+          </SurfaceCard>
+        }
+      />
+    </PageShell>
   );
 }

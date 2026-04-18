@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import styles from "@/components/places/place-loop-actions.module.css";
 import { Button } from "@/components/ui/button";
 import {
   getSavedPlaceStatus,
@@ -13,10 +12,11 @@ import {
 import { getApiErrorMessage } from "@/lib/services/api-client";
 import { siteConfig } from "@/lib/constants/site";
 import { Place } from "@/lib/types";
+import { cn } from "@/lib/utils/cn";
 
 function SaveIcon() {
   return (
-    <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+    <svg viewBox="0 0 24 24" role="presentation" focusable="false" className="h-4 w-4">
       <path
         d="M6.75 3.75h10.5A1.75 1.75 0 0 1 19 5.5v14.44a.31.31 0 0 1-.5.24L12 15.29l-6.5 4.89a.31.31 0 0 1-.5-.24V5.5a1.75 1.75 0 0 1 1.75-1.75Zm0 1.5a.25.25 0 0 0-.25.25v12.94l5.05-3.8a.75.75 0 0 1 .9 0l5.05 3.8V5.5a.25.25 0 0 0-.25-.25Z"
         fill="currentColor"
@@ -27,7 +27,7 @@ function SaveIcon() {
 
 function ShareIcon() {
   return (
-    <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+    <svg viewBox="0 0 24 24" role="presentation" focusable="false" className="h-4 w-4">
       <path
         d="M15.5 5.25a3.25 3.25 0 1 1 1.57 2.78l-7.18 3.59a3.27 3.27 0 0 1 0 .76l7.18 3.59a3.25 3.25 0 1 1-.67 1.34l-7.18-3.6a3.25 3.25 0 1 1 0-3.42l7.18-3.6a3.26 3.26 0 0 1-.22-1.18Zm0 1.5a1.75 1.75 0 1 0 0-3.5 1.75 1.75 0 0 0 0 3.5Zm-8 6.75a1.75 1.75 0 1 0 0-3.5 1.75 1.75 0 0 0 0 3.5Zm8 7.25a1.75 1.75 0 1 0 0-3.5 1.75 1.75 0 0 0 0 3.5Z"
         fill="currentColor"
@@ -178,33 +178,43 @@ export function PlaceLoopActions({ place }: PlaceLoopActionsProps) {
       : "Guárdala para volver rápido desde tu cuenta y compártela cuando la necesites.");
 
   return (
-    <section className={styles.panel} aria-label="Acciones de la ficha">
-      <div className={styles.header}>
-        <h3 className={styles.title}>Guardar y compartir</h3>
-        <p className={styles.copy}>
+    <section
+      className="grid gap-4 rounded-[1.1rem] border border-[rgba(125,211,252,0.18)] bg-[radial-gradient(circle_at_top_right,rgba(125,211,252,0.12),transparent_38%),color-mix(in_srgb,var(--surface-raised)_92%,transparent)] p-4"
+      aria-label="Acciones de la ficha"
+    >
+      <div className="grid gap-1">
+        <h3 className="m-0 text-[0.98rem]">Guardar y compartir</h3>
+        <p className="m-0 text-[0.9rem] leading-6 text-app-text-soft">
           Si te interesa este negocio, puedes dejarlo guardado en tu perfil o compartirlo por redes
           y mensajería en segundos.
         </p>
       </div>
 
-      <div className={styles.actions}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
         <Button
           type="button"
           variant={isSaved ? "primary" : "secondary"}
           onClick={handleSaveClick}
           disabled={isSaving || isCheckingSaved || Boolean(saveUnavailable)}
+          className="w-full sm:w-auto"
         >
-          <span className={styles.buttonContent}>
-            <span className={styles.icon}>
+          <span className="inline-flex items-center gap-2">
+            <span className="inline-flex h-4 w-4">
               <SaveIcon />
             </span>
             <span>{isSaving ? "Actualizando..." : saveButtonLabel}</span>
           </span>
         </Button>
 
-        <Button type="button" variant="ghost" onClick={handleShareClick} disabled={isSharing}>
-          <span className={styles.buttonContent}>
-            <span className={styles.icon}>
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={handleShareClick}
+          disabled={isSharing}
+          className="w-full sm:w-auto"
+        >
+          <span className="inline-flex items-center gap-2">
+            <span className="inline-flex h-4 w-4">
               <ShareIcon />
             </span>
             <span>{isSharing ? "Compartiendo..." : "Compartir ficha"}</span>
@@ -212,7 +222,14 @@ export function PlaceLoopActions({ place }: PlaceLoopActionsProps) {
         </Button>
       </div>
 
-      <p className={`${styles.helper} ${helperMessage ? styles.helperStrong : ""}`}>{helperText}</p>
+      <p
+        className={cn(
+          "m-0 min-h-[1.4rem] text-[0.84rem] text-app-text-muted",
+          helperMessage && "text-[var(--accent-emerald)]",
+        )}
+      >
+        {helperText}
+      </p>
     </section>
   );
 }

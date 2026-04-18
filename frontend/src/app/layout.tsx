@@ -18,13 +18,18 @@ export const metadata: Metadata = {
     template: "%s | Elbigotes",
   },
   description: "Directorio geolocalizado de servicios para mascotas en Chile",
+  icons: {
+    icon: "/icon-elbigotes.png",
+    shortcut: "/favicon.ico",
+    apple: "/icon-elbigotes.png",
+  },
 };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const categories = await getPublicCategories();
 
   return (
-    <html lang="es" suppressHydrationWarning data-theme="light">
+    <html lang="es" data-theme="light" suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -35,9 +40,16 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <Script id="theme-init" strategy="beforeInteractive">
           {`
             (() => {
-              const storedTheme = localStorage.getItem("elbigotes-theme");
-              const theme = storedTheme || "light";
-              document.documentElement.dataset.theme = theme;
+              try {
+                const storedTheme = localStorage.getItem("elbigotes-theme");
+                const theme = storedTheme || "light";
+
+                if (document.documentElement.dataset.theme !== theme) {
+                  document.documentElement.dataset.theme = theme;
+                }
+              } catch (_error) {
+                document.documentElement.dataset.theme = "light";
+              }
             })();
           `}
         </Script>
@@ -66,7 +78,12 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
               (function(c,l,a,r,i,t,y){
                 c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
                 t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-                y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+                y=l.getElementsByTagName(r)[0];
+                if (y && y.parentNode) {
+                  y.parentNode.insertBefore(t,y);
+                } else {
+                  (l.head || l.body || l.documentElement).appendChild(t);
+                }
               })(window, document, "clarity", "script", "${clarityProjectId}");
             `}
           </Script>

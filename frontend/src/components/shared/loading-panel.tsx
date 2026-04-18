@@ -1,9 +1,5 @@
-export function LoadingPanel({ message = "Cargando información..." }: { message?: string }) {
-  return (
-    <div className="feedback-panel">
-      <div className="feedback-panel__spinner" />
-      <p>{message}</p>
-    </div>
-  );
-}
+import { FeedbackPanel } from "@/components/ui/feedback-panel";
 
+export function LoadingPanel({ message = "Cargando información..." }: { message?: string }) {
+  return <FeedbackPanel message={<p className="m-0">{message}</p>} loading />;
+}

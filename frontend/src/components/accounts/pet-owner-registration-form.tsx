@@ -2,10 +2,14 @@
 
 import { FormEvent, useState } from "react";
 
-import styles from "@/components/accounts/registration.module.css";
 import { ErrorState } from "@/components/shared/error-state";
 import { LoadingPanel } from "@/components/shared/loading-panel";
 import { Button } from "@/components/ui/button";
+import { DashboardGrid } from "@/components/ui/dashboard-grid";
+import { FormCheckbox, FormField, FormGrid, InfoBox } from "@/components/ui/form-primitives";
+import { PageHero } from "@/components/ui/page-hero";
+import { PageShell } from "@/components/ui/page-shell";
+import { SurfaceCard } from "@/components/ui/surface-card";
 import {
   CHILE_REGIONS,
   DEFAULT_REGION,
@@ -71,152 +75,158 @@ export function PetOwnerRegistrationForm() {
   }
 
   return (
-    <div className={styles.page}>
-      <section className={styles.hero}>
-        <p className="eyebrow">Registro de tutor</p>
-        <h1 className="page-title">Alta de tutor y mascota</h1>
-        <p className="page-lead">
-          Este flujo crea dos fichas desde el principio: la del tutor y la de su mascota. Así
-          dejamos la base lista para campañas, fechas relevantes y comunicación personalizada.
-        </p>
-        <div className={styles.heroActions}>
+    <PageShell>
+      <PageHero
+        eyebrow="Registro de tutor"
+        title="Alta de tutor y mascota"
+        description="Este flujo crea dos fichas desde el principio: la del tutor y la de su mascota. Así dejamos la base lista para campañas, fechas relevantes y comunicación personalizada."
+        actions={
           <Button href="/registro" variant="ghost">
             Volver a tipos de cuenta
           </Button>
-        </div>
-      </section>
+        }
+      />
 
-      <div className={styles.grid}>
-        <section className={styles.formCard}>
-          <p className="eyebrow">Cuenta personal</p>
-          <h2>Crear tutor y primera mascota</h2>
-          <form className={styles.form} onSubmit={handleSubmit}>
-            <div className={styles.formGrid}>
-              <div className={styles.field}>
-                <label htmlFor="first_name">Nombre</label>
-                <input id="first_name" name="first_name" required />
-              </div>
-              <div className={styles.field}>
-                <label htmlFor="last_name">Apellido</label>
-                <input id="last_name" name="last_name" />
-              </div>
-              <div className={styles.field}>
-                <label htmlFor="email">Email</label>
-                <input id="email" name="email" type="email" required />
-              </div>
-              <div className={styles.field}>
-                <label htmlFor="password">Password</label>
-                <input id="password" name="password" type="password" minLength={8} required />
-              </div>
-              <div className={styles.field}>
-                <label htmlFor="phone">Teléfono</label>
-                <input id="phone" name="phone" required />
-              </div>
-              <div className={styles.field}>
-                <label htmlFor="address_line">Dirección</label>
+      <DashboardGrid
+        main={
+          <SurfaceCard className="grid gap-4">
+            <p className="eyebrow">Cuenta personal</p>
+            <h2 className="m-0 font-display-ui text-3xl leading-tight">
+              Crear tutor y primera mascota
+            </h2>
+            <form className="grid gap-4" onSubmit={handleSubmit}>
+              <FormGrid>
+                <FormField label="Nombre" htmlFor="first_name">
+                  <input id="first_name" name="first_name" required className="form-control" />
+                </FormField>
+                <FormField label="Apellido" htmlFor="last_name">
+                  <input id="last_name" name="last_name" className="form-control" />
+                </FormField>
+                <FormField label="Email" htmlFor="email">
+                  <input id="email" name="email" type="email" required className="form-control" />
+                </FormField>
+                <FormField label="Password" htmlFor="password">
+                  <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    minLength={8}
+                    required
+                    className="form-control"
+                  />
+                </FormField>
+                <FormField label="Teléfono" htmlFor="phone">
+                  <input id="phone" name="phone" required className="form-control" />
+                </FormField>
+                <FormField label="Dirección" htmlFor="address_line">
+                  <input
+                    id="address_line"
+                    name="address_line"
+                    placeholder="Calle, número o referencia útil"
+                    className="form-control"
+                  />
+                </FormField>
+                <FormField label="Comuna" htmlFor="commune">
+                  <select id="commune" name="commune" required className="form-control">
+                    <option value="">Selecciona una comuna</option>
+                    {getCommunesForRegion(selectedRegion).map((commune) => (
+                      <option key={commune} value={commune}>
+                        {commune}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+                <FormField label="Región" htmlFor="region">
+                  <select
+                    id="region"
+                    name="region"
+                    value={selectedRegion}
+                    onChange={(event) => setSelectedRegion(event.target.value)}
+                    className="form-control"
+                  >
+                    {CHILE_REGIONS.map((item) => (
+                      <option key={item.region} value={item.region}>
+                        {item.region}
+                      </option>
+                    ))}
+                  </select>
+                </FormField>
+              </FormGrid>
+
+              <InfoBox>
+                La ficha de mascota permite luego campañas por cumpleaños, especie, edad y momento
+                de vida sin tener que rehacer el perfil del usuario.
+              </InfoBox>
+
+              <FormGrid>
+                <FormField label="Nombre mascota" htmlFor="pet_name">
+                  <input id="pet_name" name="pet_name" required className="form-control" />
+                </FormField>
+                <FormField label="Especie" htmlFor="pet_species">
+                  <select id="pet_species" name="pet_species" defaultValue="dog" className="form-control">
+                    <option value="dog">Perro</option>
+                    <option value="cat">Gato</option>
+                    <option value="other">Otra</option>
+                  </select>
+                </FormField>
+                <FormField label="Raza" htmlFor="pet_breed">
+                  <input id="pet_breed" name="pet_breed" className="form-control" />
+                </FormField>
+                <FormField label="Sexo" htmlFor="pet_sex">
+                  <select id="pet_sex" name="pet_sex" defaultValue="unknown" className="form-control">
+                    <option value="unknown">No identificado</option>
+                    <option value="male">Macho</option>
+                    <option value="female">Hembra</option>
+                  </select>
+                </FormField>
+                <FormField label="Fecha de nacimiento" htmlFor="pet_birth_date">
+                  <input id="pet_birth_date" name="pet_birth_date" type="date" className="form-control" />
+                </FormField>
+              </FormGrid>
+
+              <FormCheckbox htmlFor="marketing_opt_in">
                 <input
-                  id="address_line"
-                  name="address_line"
-                  placeholder="Calle, número o referencia útil"
+                  id="marketing_opt_in"
+                  name="marketing_opt_in"
+                  type="checkbox"
+                  defaultChecked
+                  className="h-4 w-4 rounded border-app-border-strong accent-[var(--accent-emerald)]"
                 />
-              </div>
-              <div className={styles.field}>
-                <label htmlFor="commune">Comuna</label>
-                <select id="commune" name="commune" required>
-                  <option value="">Selecciona una comuna</option>
-                  {getCommunesForRegion(selectedRegion).map((commune) => (
-                    <option key={commune} value={commune}>
-                      {commune}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className={styles.field}>
-                <label htmlFor="region">Región</label>
-                <select
-                  id="region"
-                  name="region"
-                  value={selectedRegion}
-                  onChange={(event) => setSelectedRegion(event.target.value)}
-                >
-                  {CHILE_REGIONS.map((item) => (
-                    <option key={item.region} value={item.region}>
-                      {item.region}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
+                <span>Acepto recibir comunicaciones útiles y campañas personalizadas</span>
+              </FormCheckbox>
 
-            <div className={styles.statusBox}>
-              La ficha de mascota permite luego campañas por cumpleaños, especie, edad y momento de
-              vida sin tener que rehacer el perfil del usuario.
-            </div>
+              <Button type="submit" disabled={loading}>
+                {loading ? "Creando cuenta..." : "Crear cuenta de tutor"}
+              </Button>
 
-            <div className={styles.formGrid}>
-              <div className={styles.field}>
-                <label htmlFor="pet_name">Nombre mascota</label>
-                <input id="pet_name" name="pet_name" required />
-              </div>
-              <div className={styles.field}>
-                <label htmlFor="pet_species">Especie</label>
-                <select id="pet_species" name="pet_species" defaultValue="dog">
-                  <option value="dog">Perro</option>
-                  <option value="cat">Gato</option>
-                  <option value="other">Otra</option>
-                </select>
-              </div>
-              <div className={styles.field}>
-                <label htmlFor="pet_breed">Raza</label>
-                <input id="pet_breed" name="pet_breed" />
-              </div>
-              <div className={styles.field}>
-                <label htmlFor="pet_sex">Sexo</label>
-                <select id="pet_sex" name="pet_sex" defaultValue="unknown">
-                  <option value="unknown">No identificado</option>
-                  <option value="male">Macho</option>
-                  <option value="female">Hembra</option>
-                </select>
-              </div>
-              <div className={styles.field}>
-                <label htmlFor="pet_birth_date">Fecha de nacimiento</label>
-                <input id="pet_birth_date" name="pet_birth_date" type="date" />
-              </div>
-            </div>
+              {loading ? <LoadingPanel message="Registrando tutor y mascota..." /> : null}
+              {error ? <ErrorState message={error} /> : null}
+              {successMessage ? <div className="success-banner">{successMessage}</div> : null}
+            </form>
+          </SurfaceCard>
+        }
+        aside={
+          <>
+            <SurfaceCard className="grid gap-3">
+              <h3 className="m-0 font-display-ui text-2xl leading-tight">
+                Base para marketing responsable
+              </h3>
+              <p className="m-0 leading-7 text-app-text-soft">
+                Desde este alta ya quedan disponibles edad aproximada, especie, raza y
+                consentimiento de contacto, que son la base mínima para automatizaciones futuras.
+              </p>
+            </SurfaceCard>
 
-            <label className={styles.checkbox} htmlFor="marketing_opt_in">
-              <input id="marketing_opt_in" name="marketing_opt_in" type="checkbox" defaultChecked />
-              <span>Acepto recibir comunicaciones útiles y campañas personalizadas</span>
-            </label>
-
-            <Button type="submit" disabled={loading}>
-              {loading ? "Creando cuenta..." : "Crear cuenta de tutor"}
-            </Button>
-
-            {loading ? <LoadingPanel message="Registrando tutor y mascota..." /> : null}
-            {error ? <ErrorState message={error} /> : null}
-            {successMessage ? <div className="success-banner">{successMessage}</div> : null}
-          </form>
-        </section>
-
-        <aside className={styles.aside}>
-          <section className={styles.asideCard}>
-            <h3>Base para marketing responsable</h3>
-            <p>
-              Desde este alta ya quedan disponibles edad aproximada, especie, raza y consentimiento
-              de contacto, que son la base mínima para automatizaciones futuras.
-            </p>
-          </section>
-
-          <section className={styles.asideCard}>
-            <h3>Qué viene después</h3>
-            <p>
-              Este módulo deja el terreno listo para login, múltiples mascotas por tutor,
-              recordatorios de salud, promociones y mensajería segmentada.
-            </p>
-          </section>
-        </aside>
-      </div>
-    </div>
+            <SurfaceCard className="grid gap-3">
+              <h3 className="m-0 font-display-ui text-2xl leading-tight">Qué viene después</h3>
+              <p className="m-0 leading-7 text-app-text-soft">
+                Este módulo deja el terreno listo para login, múltiples mascotas por tutor,
+                recordatorios de salud, promociones y mensajería segmentada.
+              </p>
+            </SurfaceCard>
+          </>
+        }
+      />
+    </PageShell>
   );
 }

@@ -2,11 +2,14 @@
 
 import { FormEvent, useEffect, useState } from "react";
 
-import styles from "@/components/accounts/registration.module.css";
 import { AccountAccessNotice } from "@/components/accounts/account-access-notice";
 import { ErrorState } from "@/components/shared/error-state";
 import { LoadingPanel } from "@/components/shared/loading-panel";
 import { Button } from "@/components/ui/button";
+import { FormCheckbox, FormField, FormGrid, InfoBox } from "@/components/ui/form-primitives";
+import { PageHero } from "@/components/ui/page-hero";
+import { PageShell } from "@/components/ui/page-shell";
+import { SurfaceCard } from "@/components/ui/surface-card";
 import {
   BusinessWorkspaceResponse,
   getBusinessWorkspace,
@@ -96,50 +99,47 @@ export function BusinessProfileEditForm() {
 
   if (!workspace) {
     return (
-      <div className={styles.page}>
+      <div className="py-8">
         <ErrorState message={error ?? "No pudimos cargar el perfil comercial."} />
       </div>
     );
   }
 
   return (
-    <div className={styles.page}>
-      <section className={styles.hero}>
-        <p className="eyebrow">Área cliente</p>
-        <h1 className="page-title">Editar datos de registro</h1>
-        <p className="page-lead">
-          Ajusta la información principal de tu cuenta comercial sin tocar el estado editorial de
-          publicación.
-        </p>
-      </section>
+    <PageShell>
+      <PageHero
+        eyebrow="Área cliente"
+        title="Editar datos de registro"
+        description="Ajusta la información principal de tu cuenta comercial sin tocar el estado editorial de publicación."
+      />
 
-      <section className={styles.formCard}>
-        <form className={styles.form} onSubmit={handleSubmit}>
-          <div className={styles.formGrid}>
-            <div className={styles.field}>
-              <label htmlFor="first_name">Nombre responsable</label>
-              <input id="first_name" name="first_name" defaultValue={workspace.user.first_name} required />
-            </div>
-            <div className={styles.field}>
-              <label htmlFor="last_name">Apellido</label>
-              <input id="last_name" name="last_name" defaultValue={workspace.user.last_name} />
-            </div>
-            <div className={styles.field}>
-              <label htmlFor="business_name">Nombre comercial</label>
+      <SurfaceCard className="grid gap-6">
+        <InfoBox tone="muted">
+          Estos cambios actualizan tu perfil comercial y mantienen el mismo flujo de revisión para la ficha pública.
+        </InfoBox>
+
+        <form className="grid gap-5" onSubmit={handleSubmit}>
+          <FormGrid>
+            <FormField label="Nombre responsable" htmlFor="first_name">
+              <input className="form-control" id="first_name" name="first_name" defaultValue={workspace.user.first_name} required />
+            </FormField>
+            <FormField label="Apellido" htmlFor="last_name">
+              <input className="form-control" id="last_name" name="last_name" defaultValue={workspace.user.last_name} />
+            </FormField>
+            <FormField label="Nombre comercial" htmlFor="business_name">
               <input
+                className="form-control"
                 id="business_name"
                 name="business_name"
                 defaultValue={workspace.profile.business_name}
                 required
               />
-            </div>
-            <div className={styles.field}>
-              <label htmlFor="phone">Teléfono</label>
-              <input id="phone" name="phone" defaultValue={workspace.profile.phone} required />
-            </div>
-            <div className={styles.field}>
-              <label htmlFor="commune">Comuna</label>
-              <select id="commune" name="commune" defaultValue={workspace.profile.commune} required>
+            </FormField>
+            <FormField label="Teléfono" htmlFor="phone">
+              <input className="form-control" id="phone" name="phone" defaultValue={workspace.profile.phone} required />
+            </FormField>
+            <FormField label="Comuna" htmlFor="commune">
+              <select className="form-control" id="commune" name="commune" defaultValue={workspace.profile.commune} required>
                 <option value="">Selecciona una comuna</option>
                 {getCommunesForRegion(selectedRegion).map((commune) => (
                   <option key={commune} value={commune}>
@@ -147,10 +147,10 @@ export function BusinessProfileEditForm() {
                   </option>
                 ))}
               </select>
-            </div>
-            <div className={styles.field}>
-              <label htmlFor="region">Región</label>
+            </FormField>
+            <FormField label="Región" htmlFor="region">
               <select
+                className="form-control"
                 id="region"
                 name="region"
                 value={selectedRegion}
@@ -162,18 +162,16 @@ export function BusinessProfileEditForm() {
                   </option>
                 ))}
               </select>
-            </div>
-            <div className={styles.field}>
-              <label htmlFor="website">Sitio web</label>
-              <input id="website" name="website" type="url" defaultValue={workspace.profile.website} />
-            </div>
-            <div className={styles.fieldFull}>
-              <label htmlFor="notes">Notas comerciales</label>
-              <textarea id="notes" name="notes" defaultValue={workspace.profile.notes} />
-            </div>
-          </div>
+            </FormField>
+            <FormField label="Sitio web" htmlFor="website">
+              <input className="form-control" id="website" name="website" type="url" defaultValue={workspace.profile.website} />
+            </FormField>
+            <FormField label="Notas comerciales" htmlFor="notes" fullWidth>
+              <textarea className="form-control min-h-[110px] resize-y" id="notes" name="notes" defaultValue={workspace.profile.notes} />
+            </FormField>
+          </FormGrid>
 
-          <label className={styles.checkbox} htmlFor="marketing_opt_in">
+          <FormCheckbox htmlFor="marketing_opt_in">
             <input
               id="marketing_opt_in"
               name="marketing_opt_in"
@@ -181,9 +179,9 @@ export function BusinessProfileEditForm() {
               defaultChecked={workspace.profile.marketing_opt_in}
             />
             <span>Recibir novedades de producto y comercialización</span>
-          </label>
+          </FormCheckbox>
 
-          <div className={styles.heroActions}>
+          <div className="flex flex-wrap gap-3">
             <Button type="submit" disabled={saving}>
               {saving ? "Guardando..." : "Guardar cambios"}
             </Button>
@@ -196,7 +194,7 @@ export function BusinessProfileEditForm() {
           {error ? <ErrorState message={error} /> : null}
           {successMessage ? <div className="success-banner">{successMessage}</div> : null}
         </form>
-      </section>
-    </div>
+      </SurfaceCard>
+    </PageShell>
   );
 }
