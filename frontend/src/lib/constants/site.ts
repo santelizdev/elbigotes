@@ -1,3 +1,8 @@
+function readEnvOrFallback(value: string | undefined, fallback: string) {
+  const normalizedValue = value?.trim();
+  return normalizedValue ? normalizedValue : fallback;
+}
+
 export const siteConfig = {
   name: "Elbigotes",
   description:
@@ -15,6 +20,6 @@ export const siteConfig = {
   },
   defaultZoom: Number(process.env.NEXT_PUBLIC_DEFAULT_ZOOM ?? "11"),
   useMocks: process.env.NEXT_PUBLIC_USE_MOCKS === "true",
-  ga4MeasurementId: process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID ?? "G-Q31EB1NWRV",
-  clarityProjectId: process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID ?? "wbmwz86s1d",
+  ga4MeasurementId: readEnvOrFallback(process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID, "G-Q31EB1NWRV"),
+  clarityProjectId: readEnvOrFallback(process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID, "wbmwz86s1d"),
 };
