@@ -51,9 +51,11 @@ export function MapExplorerPage({
     error,
     locationMessage,
     showOnlyVerified,
+    showOnly247,
     setSelectedCommune,
     setRadiusKm,
     setShowOnlyVerified,
+    setShowOnly247,
     updateCategory,
     updateRegion,
     toggleUserLocation,
@@ -91,7 +93,7 @@ export function MapExplorerPage({
 
   return (
     <PageShell className="gap-5 pt-5">
-      <SectionHeader title="Que buscas para tu Mascota?" />
+      <SectionHeader title="Servicios operativos para tu mascota" />
 
       <CategoryFilterBar
         categories={categories}
@@ -111,11 +113,13 @@ export function MapExplorerPage({
         locating={locating}
         locationMessage={locationMessage}
         showOnlyVerified={showOnlyVerified}
+        showOnly247={showOnly247}
         onRegionChange={updateRegion}
         onCommuneChange={setSelectedCommune}
         onRadiusChange={setRadiusKm}
         onLocationToggle={toggleUserLocation}
         onVerifiedChange={setShowOnlyVerified}
+        onOpen247Change={setShowOnly247}
       />
 
       <div className="grid min-h-[40rem] gap-4 xl:grid-cols-[minmax(420px,0.96fr)_minmax(0,1.1fr)]">
@@ -123,7 +127,7 @@ export function MapExplorerPage({
           <SurfaceCard className="grid gap-4 p-4">
             <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
               <div>
-                <p className="eyebrow">Resultados del mapa</p>
+                <p className="eyebrow">Servicios en el mapa</p>
                 <h2 className="m-0 pt-1 font-display-ui text-[1.08rem]">Listado operativo</h2>
               </div>
               <span className="text-[0.92rem] text-app-text-muted">{places.length} resultados</span>
@@ -174,27 +178,27 @@ export function MapExplorerPage({
       </SurfaceCard>
 
       <PageHero
-        eyebrow="Infraestructura pública pet en Chile"
+        eyebrow="Servicios pet activos en Chile"
         title={title}
         description={description}
         actions={
           <div className="flex flex-wrap items-center gap-3">
             <Button
-              href="/mascotas-perdidas"
+              href="/emergencias-veterinarias-24-7"
               variant="secondary"
               className="border-white bg-white text-[#102127] shadow-[0_18px_34px_rgba(255,255,255,0.18)] hover:bg-white dark:border-transparent dark:bg-[linear-gradient(135deg,var(--accent-emerald),#106b78)] dark:text-white dark:shadow-[0_18px_34px_color-mix(in_srgb,var(--accent-emerald)_24%,transparent)]"
             >
               <span className="mr-2 inline-flex items-center justify-center align-middle" aria-hidden="true">
                 <FaSearch />
               </span>
-              Ver publicaciones activas
+              Ver servicios 24 horas
             </Button>
             <Button
-              href="/publicar-mascota-perdida"
+              href="/?category=tiendas-de-alimentos"
               variant="secondary"
               className="border-app-border-strong bg-transparent text-app-text hover:bg-[color-mix(in_srgb,var(--surface)_90%,transparent)]"
             >
-              Publicar una mascota perdida
+              Explorar tiendas de alimentos
             </Button>
           </div>
         }

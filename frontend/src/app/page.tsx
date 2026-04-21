@@ -27,8 +27,8 @@ export default async function HomePage({
         <ErrorState message="No pudimos cargar todos los datos del home. La vista seguirá operativa con la información disponible." />
       ) : null}
       <MapExplorerPage
-        title="Mapa del ecosistema pet en Chile"
-        description="Explora veterinarias, refugios, parques pet friendly, guarderías y servicios 24/7 en una interfaz pensada para decidir rápido y con contexto territorial."
+        title="Servicios pet operativos en Chile"
+        description="Explora servicios 24 horas, tiendas de alimentos, peluquerías, guarderías y refugios en una interfaz pensada para decidir rápido y con contexto territorial."
         initialPlaces={places}
         initialCategory={initialCategory}
         categories={categories}

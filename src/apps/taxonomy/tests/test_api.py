@@ -13,5 +13,7 @@ def test_public_category_list_only_returns_active_categories():
     response = client.get("/api/v1/taxonomy/categories/")
 
     assert response.status_code == 200
-    assert len(response.data) == 1
-    assert response.data[0]["slug"] == "veterinarias"
+    response_slugs = {item["slug"] for item in response.data}
+
+    assert "veterinarias" in response_slugs
+    assert "oculta" not in response_slugs

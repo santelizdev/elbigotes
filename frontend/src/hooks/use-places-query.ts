@@ -103,6 +103,7 @@ export function usePlacesQuery({ initialPlaces, initialCategory }: UsePlacesQuer
   const [radiusKm, setRadiusKm] = useState<number | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [showOnlyVerified, setShowOnlyVerified] = useState(false);
+  const [showOnly247, setShowOnly247] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [locationMessage, setLocationMessage] = useState<string | null>(null);
@@ -122,6 +123,7 @@ export function usePlacesQuery({ initialPlaces, initialCategory }: UsePlacesQuer
       lng: radiusKm && userLocation ? userLocation.lng : undefined,
       radiusKm: radiusKm && userLocation ? radiusKm : undefined,
       verifiedOnly: showOnlyVerified,
+      isOpen247: showOnly247,
     };
 
     setLoading(true);
@@ -170,6 +172,7 @@ export function usePlacesQuery({ initialPlaces, initialCategory }: UsePlacesQuer
             commune: filters.commune,
             radiusKm: filters.radiusKm,
             verifiedOnly: filters.verifiedOnly,
+            isOpen247: filters.isOpen247,
           });
         } else {
           console.error("[usePlacesQuery] Unexpected error", error);
@@ -196,6 +199,7 @@ export function usePlacesQuery({ initialPlaces, initialCategory }: UsePlacesQuer
     radiusKm,
     userLocation,
     showOnlyVerified,
+    showOnly247,
   ]);
 
   useEffect(() => {
@@ -203,6 +207,7 @@ export function usePlacesQuery({ initialPlaces, initialCategory }: UsePlacesQuer
     const territoryFilters: PlaceFilters = {
       category: selectedCategory || undefined,
       verifiedOnly: showOnlyVerified,
+      isOpen247: showOnly247,
     };
 
     getPlaces(territoryFilters)
@@ -223,7 +228,7 @@ export function usePlacesQuery({ initialPlaces, initialCategory }: UsePlacesQuer
     return () => {
       active = false;
     };
-  }, [selectedCategory, showOnlyVerified]);
+  }, [selectedCategory, showOnlyVerified, showOnly247]);
 
   const availableRegions = buildTerritoryOptions(territoryPlaces.map((place) => place.region));
   const regionNames = availableRegions.map((item) => item.name);
@@ -344,10 +349,12 @@ export function usePlacesQuery({ initialPlaces, initialCategory }: UsePlacesQuer
     error,
     locationMessage,
     showOnlyVerified,
+    showOnly247,
     setSearch,
     setSelectedCommune,
     setRadiusKm,
     setShowOnlyVerified,
+    setShowOnly247,
     updateCategory,
     updateRegion,
     toggleUserLocation,

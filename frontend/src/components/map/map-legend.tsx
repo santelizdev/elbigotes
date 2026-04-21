@@ -1,4 +1,4 @@
-import { FaBolt, FaCut, FaDog, FaHome, FaSearch, FaStethoscope, FaTree } from "react-icons/fa";
+import { FaBolt, FaCut, FaDog, FaHome, FaShoppingBasket, FaStethoscope, FaTree } from "react-icons/fa";
 
 import { CategoryDefinition } from "@/lib/constants/categories";
 
@@ -7,9 +7,9 @@ const CATEGORY_ICONS = {
   "refugios-albergues": FaHome,
   "parques-pet-friendly": FaTree,
   "emergencias-veterinarias": FaBolt,
+  "tiendas-de-alimentos": FaShoppingBasket,
   guarderias: FaDog,
   peluquerias: FaCut,
-  "mascotas-perdidas": FaSearch,
 } as const;
 
 export function MapLegend({ categories }: { categories: CategoryDefinition[] }) {

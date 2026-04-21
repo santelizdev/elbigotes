@@ -219,6 +219,11 @@ export function PlaceList({
                   reviewsCount={place.googleReviewsCount}
                   compact
                 />
+                {place.isOpen247 ? (
+                  <div className="inline-tags">
+                    <Tag tone="warning">24 horas</Tag>
+                  </div>
+                ) : null}
               </div>
             </button>
           ))}

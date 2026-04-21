@@ -17,11 +17,13 @@ interface ExplorerToolbarProps {
   locating: boolean;
   locationMessage?: string | null;
   showOnlyVerified: boolean;
+  showOnly247: boolean;
   onRegionChange: (value: string) => void;
   onCommuneChange: (value: string) => void;
   onRadiusChange: (value: number | null) => void;
   onLocationToggle: () => void;
   onVerifiedChange: (checked: boolean) => void;
+  onOpen247Change: (checked: boolean) => void;
 }
 
 export function ExplorerToolbar({
@@ -36,11 +38,13 @@ export function ExplorerToolbar({
   locating,
   locationMessage,
   showOnlyVerified,
+  showOnly247,
   onRegionChange,
   onCommuneChange,
   onRadiusChange,
   onLocationToggle,
   onVerifiedChange,
+  onOpen247Change,
 }: ExplorerToolbarProps) {
   const helperMessage =
     locationMessage ??
@@ -117,15 +121,27 @@ export function ExplorerToolbar({
         </select>
       </label>
 
-      <label className="inline-flex min-h-[3rem] items-center gap-3 text-app-text-soft">
-        <input
-          type="checkbox"
-          checked={showOnlyVerified}
-          onChange={(event) => onVerifiedChange(event.target.checked)}
-          className="h-4 w-4 rounded border-app-border-strong accent-[var(--accent-emerald)]"
-        />
-        <span>Solo fichas verificadas</span>
-      </label>
+      <div className="grid gap-2">
+        <label className="inline-flex min-h-[1.4rem] items-center gap-3 text-app-text-soft">
+          <input
+            type="checkbox"
+            checked={showOnly247}
+            onChange={(event) => onOpen247Change(event.target.checked)}
+            className="h-4 w-4 rounded border-app-border-strong accent-[var(--accent-emerald)]"
+          />
+          <span>Solo 24 horas</span>
+        </label>
+
+        <label className="inline-flex min-h-[1.4rem] items-center gap-3 text-app-text-soft">
+          <input
+            type="checkbox"
+            checked={showOnlyVerified}
+            onChange={(event) => onVerifiedChange(event.target.checked)}
+            className="h-4 w-4 rounded border-app-border-strong accent-[var(--accent-emerald)]"
+          />
+          <span>Solo fichas verificadas</span>
+        </label>
+      </div>
 
       <p className={cn("m-0 text-sm text-app-text-muted xl:col-span-full")}>{helperMessage}</p>
     </div>

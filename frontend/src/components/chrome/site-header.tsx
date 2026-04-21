@@ -199,10 +199,6 @@ export function SiteHeader({ categories }: SiteHeaderProps) {
               ) : null}
             </div>
 
-            <Link href="/mascotas-perdidas" className={navLinkClass}>
-              Mascotas perdidas
-            </Link>
-
             <Link href="/reviews" className={navLinkClass}>
               Reviews
             </Link>
@@ -217,13 +213,13 @@ export function SiteHeader({ categories }: SiteHeaderProps) {
             <ThemeToggleButton compact />
 
             <Link
-              href="/publicar-mascota-perdida"
+              href="/registro/negocio"
               className={cn(
                 "inline-flex min-h-[2.9rem] items-center justify-center rounded-full border px-4 py-3 font-semibold no-underline shadow-[0_14px_28px_rgba(7,20,25,0.08)] transition duration-150 hover:-translate-y-px",
                 publishButtonClass,
               )}
             >
-              Publicar
+              Registrar negocio
             </Link>
           </div>
         </nav>
@@ -268,13 +264,6 @@ export function SiteHeader({ categories }: SiteHeaderProps) {
             </div>
 
             <Link
-              href="/mascotas-perdidas"
-              className="inline-flex w-full items-center gap-2 rounded-2xl bg-white/5 px-4 py-3 text-app-text no-underline"
-            >
-              Mascotas perdidas
-            </Link>
-
-            <Link
               href="/reviews"
               className="inline-flex w-full items-center gap-2 rounded-2xl bg-white/5 px-4 py-3 text-app-text no-underline"
             >
@@ -294,13 +283,13 @@ export function SiteHeader({ categories }: SiteHeaderProps) {
             <div className="grid gap-3">
               <ThemeToggleButton compact />
               <Link
-                href="/publicar-mascota-perdida"
+                href="/registro/negocio"
                 className={cn(
                   "inline-flex min-h-[2.9rem] w-full items-center justify-center rounded-full border px-4 py-3 font-semibold no-underline shadow-[0_14px_28px_rgba(7,20,25,0.08)]",
                   publishButtonClass,
                 )}
               >
-                Publicar
+                Registrar negocio
               </Link>
             </div>
           </div>

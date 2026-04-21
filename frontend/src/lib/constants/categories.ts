@@ -20,33 +20,26 @@ export interface CategoryDefinition {
 }
 
 const KNOWN_CATEGORY_PRESETS: Record<string, Partial<CategoryDefinition>> = {
-  veterinarias: {
-    label: "Veterinarias",
-    shortLabel: "Veterinarias",
-    description: "Consultas, especialidades y atención preventiva para perros y gatos.",
-    accent: "var(--accent-blue)",
-    route: "/veterinarias",
-  },
-  "refugios-albergues": {
-    label: "Refugios y albergues",
-    shortLabel: "Refugios",
-    description: "Organizaciones y espacios de rescate con información geolocalizada.",
-    accent: "var(--accent-cyan)",
-    route: "/refugios",
-  },
-  "parques-pet-friendly": {
-    label: "Parques pet friendly",
-    shortLabel: "Parques",
-    description: "Zonas aptas para paseo, juego y encuentro seguro en ciudad.",
-    accent: "var(--accent-lime)",
-    route: "/parques-pet-friendly",
-  },
   "emergencias-veterinarias": {
     label: "Emergencias veterinarias 24/7",
-    shortLabel: "Emergencias",
+    shortLabel: "24 horas",
     description: "Atención crítica y hospitales veterinarios disponibles de forma continua.",
     accent: "var(--accent-coral)",
     route: "/emergencias-veterinarias-24-7",
+  },
+  "tiendas-de-alimentos": {
+    label: "Tiendas de alimentos",
+    shortLabel: "Alimentos",
+    description: "Alimento, snacks y abastecimiento diario para perros y gatos.",
+    accent: "var(--accent-gold)",
+    route: "/?category=tiendas-de-alimentos",
+  },
+  peluquerias: {
+    label: "Peluquerías",
+    shortLabel: "Peluquerías",
+    description: "Baño, corte y grooming con datos públicos comparables sobre el mapa.",
+    accent: "var(--accent-emerald)",
+    route: "/?category=peluquerias",
   },
   guarderias: {
     label: "Guarderías",
@@ -55,12 +48,26 @@ const KNOWN_CATEGORY_PRESETS: Record<string, Partial<CategoryDefinition>> = {
     accent: "var(--accent-orange)",
     route: "/guarderias",
   },
-  peluquerias: {
-    label: "Peluquerías",
-    shortLabel: "Peluquerías",
-    description: "Baño, corte y grooming con datos públicos comparables sobre el mapa.",
-    accent: "var(--accent-emerald)",
-    route: "/?category=peluquerias",
+  "refugios-albergues": {
+    label: "Refugios y albergues",
+    shortLabel: "Refugios",
+    description: "Organizaciones y espacios de rescate con información geolocalizada.",
+    accent: "var(--accent-cyan)",
+    route: "/refugios",
+  },
+  veterinarias: {
+    label: "Veterinarias",
+    shortLabel: "Veterinarias",
+    description: "Consultas, especialidades y atención preventiva para perros y gatos.",
+    accent: "var(--accent-blue)",
+    route: "/veterinarias",
+  },
+  "parques-pet-friendly": {
+    label: "Parques pet friendly",
+    shortLabel: "Parques",
+    description: "Zonas aptas para paseo, juego y encuentro seguro en ciudad.",
+    accent: "var(--accent-lime)",
+    route: "/parques-pet-friendly",
   },
 };
 
@@ -74,22 +81,29 @@ const PLACE_ACCENTS = [
 ];
 
 const FALLBACK_PLACE_CATEGORIES: PublicCategory[] = [
-  { name: "Veterinarias", slug: "veterinarias", sortOrder: 0 },
-  { name: "Refugios y albergues", slug: "refugios-albergues", sortOrder: 1 },
-  { name: "Parques pet friendly", slug: "parques-pet-friendly", sortOrder: 2 },
-  { name: "Emergencias veterinarias 24/7", slug: "emergencias-veterinarias", sortOrder: 3 },
-  { name: "Guarderías", slug: "guarderias", sortOrder: 4 },
+  { name: "Emergencias veterinarias 24/7", slug: "emergencias-veterinarias", sortOrder: 0 },
+  { name: "Tiendas de alimentos", slug: "tiendas-de-alimentos", sortOrder: 1 },
+  { name: "Peluquerías", slug: "peluquerias", sortOrder: 2 },
+  { name: "Guarderías", slug: "guarderias", sortOrder: 3 },
+  { name: "Refugios y albergues", slug: "refugios-albergues", sortOrder: 4 },
+  { name: "Veterinarias", slug: "veterinarias", sortOrder: 5 },
+  { name: "Parques pet friendly", slug: "parques-pet-friendly", sortOrder: 6 },
 ];
 
-const LOST_PETS_CATEGORY: CategoryDefinition = {
-  slug: "mascotas-perdidas",
-  label: "Mascotas perdidas",
-  shortLabel: "Perdidas",
-  description: "Reportes activos con última ubicación conocida y acceso rápido a publicación.",
-  accent: "var(--accent-gold)",
-  route: "/mascotas-perdidas",
-  kind: "lost-pets",
-};
+const CATEGORY_PRIORITY_ORDER = [
+  "emergencias-veterinarias",
+  "tiendas-de-alimentos",
+  "peluquerias",
+  "guarderias",
+  "refugios-albergues",
+  "veterinarias",
+  "parques-pet-friendly",
+] as const;
+
+function getCategoryPriority(slug: string) {
+  const index = CATEGORY_PRIORITY_ORDER.indexOf(slug as (typeof CATEGORY_PRIORITY_ORDER)[number]);
+  return index === -1 ? Number.MAX_SAFE_INTEGER : index;
+}
 
 function fallbackShortLabel(name: string) {
   return name.split(" y ")[0]?.trim() || name;
@@ -122,6 +136,10 @@ export function buildPlaceCategoryDefinition(
 export function buildPlaceCategoryDefinitions(categories?: PublicCategory[]): CategoryDefinition[] {
   const source = categories?.length
     ? [...categories].sort((left, right) => {
+        const priorityDelta = getCategoryPriority(left.slug) - getCategoryPriority(right.slug);
+        if (priorityDelta !== 0) {
+          return priorityDelta;
+        }
         const leftOrder = left.sortOrder ?? Number.MAX_SAFE_INTEGER;
         const rightOrder = right.sortOrder ?? Number.MAX_SAFE_INTEGER;
         return leftOrder - rightOrder || left.name.localeCompare(right.name, "es");
@@ -130,10 +148,7 @@ export function buildPlaceCategoryDefinitions(categories?: PublicCategory[]): Ca
   return source.map((category, index) => buildPlaceCategoryDefinition(category, index));
 }
 
-export const CATEGORY_DEFINITIONS: CategoryDefinition[] = [
-  ...buildPlaceCategoryDefinitions(),
-  LOST_PETS_CATEGORY,
-];
+export const CATEGORY_DEFINITIONS: CategoryDefinition[] = buildPlaceCategoryDefinitions();
 
 export function getCategoryDefinition(
   slug: string,
