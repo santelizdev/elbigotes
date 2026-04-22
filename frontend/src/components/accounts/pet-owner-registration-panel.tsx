@@ -296,8 +296,8 @@ export function PetOwnerRegistrationPanel({
       </FormGrid>
 
       <InfoBox tone="muted" className="rounded-[1.2rem]">
-        Aquí quedará el punto de integración para verificación por correo con Brevo. Variables
-        previstas: <code>BREVO_API_KEY</code> y <code>BREVO_SENDER_EMAIL</code>.
+        La verificación por correo ya queda conectada vía Brevo cuando el servidor tenga
+        configurados <code>BREVO_API_KEY</code> y <code>BREVO_SENDER_EMAIL</code>.
       </InfoBox>
 
       <FormGrid>

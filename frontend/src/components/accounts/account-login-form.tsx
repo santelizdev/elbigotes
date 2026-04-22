@@ -1,7 +1,7 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { FaFacebookF, FaGoogle } from "react-icons/fa6";
 
 import { PetOwnerRegistrationPanel } from "@/components/accounts/pet-owner-registration-panel";
@@ -21,7 +21,8 @@ interface LoginFieldErrors {
   password?: string;
 }
 
-const GOOGLE_AUTH_URL = process.env.NEXT_PUBLIC_GOOGLE_AUTH_URL?.trim() || "";
+const GOOGLE_AUTH_URL =
+  process.env.NEXT_PUBLIC_GOOGLE_AUTH_URL?.trim() || "/api/v1/accounts/oauth/google/start/";
 const FACEBOOK_AUTH_URL = process.env.NEXT_PUBLIC_FACEBOOK_AUTH_URL?.trim() || "";
 
 function buildLoginFieldErrors(email: string, password: string): LoginFieldErrors {
@@ -40,12 +41,67 @@ function buildLoginFieldErrors(email: string, password: string): LoginFieldError
 
 export function AccountLoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<LoginFieldErrors>({});
   const [socialMessage, setSocialMessage] = useState<string | null>(null);
 
   const socialButtonsDisabled = useMemo(() => loading, [loading]);
+
+  useEffect(() => {
+    const token = searchParams.get("token");
+    const role = searchParams.get("role");
+    const provider = searchParams.get("auth_provider");
+    const verificationStatus = searchParams.get("verified");
+    const oauthError = searchParams.get("error");
+    const nextPath = searchParams.get("next");
+
+    if (verificationStatus === "success") {
+      setSocialMessage("Tu correo fue verificado correctamente. Ya puedes entrar con normalidad.");
+      router.replace("/ingresar");
+      return;
+    }
+
+    if (verificationStatus === "error") {
+      setSocialMessage("No pudimos verificar tu correo. Intenta nuevamente desde el enlace más reciente.");
+      router.replace("/ingresar");
+      return;
+    }
+
+    if (oauthError) {
+      setSocialMessage(
+        oauthError === "google_oauth_not_configured"
+          ? "Google OAuth aún no está configurado correctamente en el servidor."
+          : "No pudimos completar el acceso con Google. Intenta nuevamente.",
+      );
+      router.replace("/ingresar");
+      return;
+    }
+
+    if (!token || !role) {
+      return;
+    }
+
+    setStoredAccessToken(token);
+
+    if (provider === "google" && role === "pet_owner") {
+      router.replace(nextPath === "/mi-negocio" ? "/mi-cuenta" : nextPath || "/mi-cuenta");
+      router.refresh();
+      return;
+    }
+
+    if (role === "business_owner") {
+      router.replace("/mi-negocio");
+      router.refresh();
+      return;
+    }
+
+    if (role === "pet_owner") {
+      router.replace("/mi-cuenta");
+      router.refresh();
+    }
+  }, [router, searchParams]);
 
   function handleGoogleLogin() {
     setSocialMessage(null);
@@ -57,8 +113,7 @@ export function AccountLoginForm() {
       return;
     }
 
-    // TODO(auth): conectar este redirect con el callback OAuth real del backend.
-    window.location.assign(GOOGLE_AUTH_URL);
+    window.location.assign(`${GOOGLE_AUTH_URL}?next=/mi-cuenta`);
   }
 
   function handleFacebookLogin() {

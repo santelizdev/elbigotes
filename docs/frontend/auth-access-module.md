@@ -25,16 +25,18 @@ Este ajuste mantiene el login actual y agrega un registro visible de tutores de 
 - Select buscable de raza dependiente del tipo de mascota.
 - Mensaje post-registro orientado a futura verificación por correo.
 
-## Prepared But Not Yet Connected
+## Active Integrations
 
 ### Google OAuth
 
-- Variable esperada: `NEXT_PUBLIC_GOOGLE_AUTH_URL`
-- Handler listo: `handleGoogleLogin()`
-- Falta backend:
-  - endpoint OAuth de inicio
-  - callback
-  - intercambio de sesión/token
+- Endpoint activo: `/api/v1/accounts/oauth/google/start/`
+- Callback activo: `/api/v1/accounts/oauth/google/callback/`
+- Variables backend requeridas:
+  - `GOOGLE_CLIENT_ID`
+  - `GOOGLE_CLIENT_SECRET`
+- Comportamiento actual:
+  - si el email ya existe, entra con su cuenta
+  - si no existe, se crea una cuenta base `pet_owner` con correo verificado por Google
 
 ### Facebook OAuth
 
@@ -50,12 +52,13 @@ Este ajuste mantiene el login actual y agrega un registro visible de tutores de 
 - Variables futuras:
   - `BREVO_API_KEY`
   - `BREVO_SENDER_EMAIL`
-- Estado frontend preparado:
-  - `isEmailVerified = false`
-- Falta backend:
-  - envío de correo
-  - generación de token/verificación
-  - endpoint para confirmar email
+- Variables opcionales:
+  - `BREVO_SENDER_NAME`
+  - `BREVO_REPLY_TO`
+- Estado activo:
+  - el registro dispara correo de verificación si Brevo está configurado
+  - endpoint activo: `/api/v1/accounts/verify-email/`
+  - `isEmailVerified = false` se mantiene como base frontend hasta que el usuario confirme
 
 ## Data Structure
 

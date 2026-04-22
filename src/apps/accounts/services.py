@@ -1,6 +1,7 @@
 from django.contrib.gis.geos import Point
 from django.db import transaction
 
+from apps.accounts.email_verification import send_verification_email
 from apps.accounts.models import (
     BusinessKind,
     BusinessProfile,
@@ -152,6 +153,7 @@ def register_business_account(validated_data):
     profile.place = place
     profile.save(update_fields=["place", "updated_at"])
     assign_default_business_membership(profile)
+    send_verification_email(user)
     return user, profile
 
 
@@ -228,4 +230,5 @@ def register_pet_owner_account(validated_data):
     profile = PetOwnerProfile.objects.create(user=user, **validated_data["profile"])
     pet = PetProfile.objects.create(owner=profile, **initial_pet)
     assign_default_pet_owner_membership(profile)
+    send_verification_email(user)
     return user, profile, pet

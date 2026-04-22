@@ -1,7 +1,11 @@
-from rest_framework import generics, permissions, status
+from urllib.parse import urlencode
+
+from django.conf import settings
+from django.http import HttpResponseRedirect
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
+from rest_framework import generics, permissions, status
 
 from apps.accounts.api.authentication import SignedTokenAuthentication
 from apps.accounts.api.permissions import IsBusinessOwner, IsPetOwner
@@ -19,6 +23,15 @@ from apps.accounts.api.serializers import (
     SavedPlaceStatusSerializer,
     build_registration_catalog,
 )
+from apps.accounts.email_verification import verify_email_token
+from apps.accounts.oauth import (
+    GoogleOAuthConfigurationError,
+    GoogleOAuthExchangeError,
+    build_google_oauth_start_url,
+    exchange_google_code_for_profile,
+    get_or_create_user_from_google_profile,
+)
+from apps.accounts.tokens import create_access_token
 from apps.accounts.models import SavedPlace
 from apps.places.models import Place
 from apps.memberships.services import ensure_default_membership_for_owner, sync_memberships_for_owner
@@ -49,6 +62,80 @@ class AccountLoginView(generics.CreateAPIView):
     serializer_class = LoginSerializer
     authentication_classes = []
     permission_classes = []
+
+
+class GoogleOAuthStartView(APIView):
+    authentication_classes = []
+    permission_classes = []
+
+    def get(self, request, *args, **kwargs):
+        next_path = request.query_params.get("next") or "/ingresar"
+        current_site_url = request.build_absolute_uri("/").rstrip("/")
+
+        try:
+            return HttpResponseRedirect(
+                build_google_oauth_start_url(next_path=next_path, site_url=current_site_url)
+            )
+        except GoogleOAuthConfigurationError:
+            params = urlencode({"error": "google_oauth_not_configured"})
+            return HttpResponseRedirect(f"{settings.SITE_URL}/ingresar?{params}")
+
+
+class GoogleOAuthCallbackView(APIView):
+    authentication_classes = []
+    permission_classes = []
+
+    def get(self, request, *args, **kwargs):
+        code = request.query_params.get("code", "")
+        state = request.query_params.get("state", "")
+        oauth_error = request.query_params.get("error")
+        current_site_url = request.build_absolute_uri("/").rstrip("/")
+
+        if oauth_error:
+            params = urlencode({"error": oauth_error})
+            return HttpResponseRedirect(f"{settings.SITE_URL}/ingresar?{params}")
+
+        if not code or not state:
+            params = urlencode({"error": "google_oauth_missing_code"})
+            return HttpResponseRedirect(f"{settings.SITE_URL}/ingresar?{params}")
+
+        try:
+            state_payload, profile = exchange_google_code_for_profile(
+                code=code,
+                state_token=state,
+                site_url=current_site_url,
+            )
+            user = get_or_create_user_from_google_profile(profile)
+            token = create_access_token(user)
+            params = urlencode(
+                {
+                    "token": token,
+                    "role": user.role,
+                    "auth_provider": "google",
+                    "next": state_payload.get("next_path", "/ingresar"),
+                }
+            )
+            return HttpResponseRedirect(f"{settings.SITE_URL}/ingresar?{params}")
+        except (GoogleOAuthConfigurationError, GoogleOAuthExchangeError, ValueError):
+            params = urlencode({"error": "google_oauth_failed"})
+            return HttpResponseRedirect(f"{settings.SITE_URL}/ingresar?{params}")
+
+
+class EmailVerificationView(APIView):
+    authentication_classes = []
+    permission_classes = []
+
+    def get(self, request, *args, **kwargs):
+        token = request.query_params.get("token", "")
+
+        if not token:
+            return HttpResponseRedirect(f"{settings.SITE_URL}/ingresar?verified=error")
+
+        try:
+            verify_email_token(token)
+            return HttpResponseRedirect(f"{settings.SITE_URL}/ingresar?verified=success")
+        except Exception:
+            return HttpResponseRedirect(f"{settings.SITE_URL}/ingresar?verified=error")
 
 
 class BusinessWorkspaceView(APIView):

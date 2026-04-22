@@ -5,6 +5,7 @@ from config.settings.env import BASE_DIR, get_bool, get_env, get_int, get_list
 
 SECRET_KEY = get_env("DJANGO_SECRET_KEY", "unsafe-development-secret-key")
 DEBUG = get_bool("DJANGO_DEBUG", False)
+TESTING = False
 ALLOWED_HOSTS = get_list("DJANGO_ALLOWED_HOSTS", ["localhost", "127.0.0.1"])
 CSRF_TRUSTED_ORIGINS = get_list("DJANGO_CSRF_TRUSTED_ORIGINS", [])
 
@@ -129,6 +130,13 @@ CELERY_TASK_SOFT_TIME_LIMIT = get_int("CELERY_TASK_SOFT_TIME_LIMIT", 240)
 GEOCODING_PROVIDER = get_env("GEOCODING_PROVIDER", "nominatim")
 GEOCODING_TIMEOUT = get_int("GEOCODING_TIMEOUT", 10)
 GEOCODING_USER_AGENT = get_env("GEOCODING_USER_AGENT", "elbigotes-backend/0.1")
+SITE_URL = (get_env("NEXT_PUBLIC_SITE_URL", "http://localhost:13000") or "http://localhost:13000").rstrip("/")
+GOOGLE_CLIENT_ID = get_env("GOOGLE_CLIENT_ID", "") or ""
+GOOGLE_CLIENT_SECRET = get_env("GOOGLE_CLIENT_SECRET", "") or ""
+BREVO_API_KEY = get_env("BREVO_API_KEY", "") or ""
+BREVO_SENDER_EMAIL = get_env("BREVO_SENDER_EMAIL", "") or ""
+BREVO_SENDER_NAME = get_env("BREVO_SENDER_NAME", "ElBigotes") or "ElBigotes"
+BREVO_REPLY_TO = get_env("BREVO_REPLY_TO", "") or ""
 CELERY_BEAT_SCHEDULE = {
     "ping-ingestion-sources": {
         "task": "apps.ingestion.tasks.sync_active_sources",

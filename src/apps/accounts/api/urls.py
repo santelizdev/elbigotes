@@ -5,6 +5,9 @@ from apps.accounts.api.views import (
     BusinessBranchCreateView,
     BusinessRegistrationView,
     BusinessWorkspaceView,
+    EmailVerificationView,
+    GoogleOAuthCallbackView,
+    GoogleOAuthStartView,
     PetOwnerRegistrationView,
     PetOwnerWorkspaceView,
     RegistrationCatalogView,
@@ -15,6 +18,13 @@ from apps.accounts.api.views import (
 urlpatterns = [
     path("catalog/", RegistrationCatalogView.as_view(), name="accounts-registration-catalog"),
     path("login/", AccountLoginView.as_view(), name="accounts-login"),
+    path("oauth/google/start/", GoogleOAuthStartView.as_view(), name="accounts-oauth-google-start"),
+    path(
+        "oauth/google/callback/",
+        GoogleOAuthCallbackView.as_view(),
+        name="accounts-oauth-google-callback",
+    ),
+    path("verify-email/", EmailVerificationView.as_view(), name="accounts-verify-email"),
     path(
         "register/business/",
         BusinessRegistrationView.as_view(),
