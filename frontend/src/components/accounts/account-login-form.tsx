@@ -8,7 +8,7 @@ import { PetOwnerRegistrationPanel } from "@/components/accounts/pet-owner-regis
 import { ErrorState } from "@/components/shared/error-state";
 import { LoadingPanel } from "@/components/shared/loading-panel";
 import { Button } from "@/components/ui/button";
-import { FormField, FormGrid, InfoBox } from "@/components/ui/form-primitives";
+import { FormField, InfoBox } from "@/components/ui/form-primitives";
 import { PageHero } from "@/components/ui/page-hero";
 import { PageShell } from "@/components/ui/page-shell";
 import { SurfaceCard } from "@/components/ui/surface-card";
@@ -131,9 +131,9 @@ export function AccountLoginForm() {
         className="p-6"
       />
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-        <SurfaceCard className="grid gap-4 p-5 md:p-6">
-          <div className="grid gap-2">
+      <div className="grid items-start gap-5 lg:grid-cols-[minmax(18rem,0.86fr)_minmax(22rem,1.14fr)]">
+        <SurfaceCard className="grid content-start gap-4 self-start p-5 md:p-6">
+          <div className="grid gap-2 md:max-w-[32rem]">
             <p className="eyebrow">Login existente</p>
             <h2 className="m-0 font-display-ui text-[1.85rem] leading-tight">Iniciar sesión</h2>
             <p className="m-0 text-sm leading-7 text-app-text-soft">
@@ -141,13 +141,13 @@ export function AccountLoginForm() {
             </p>
           </div>
 
-          <div className="grid gap-3">
+          <div className="grid gap-3 md:max-w-[32rem]">
             <Button
               type="button"
               variant="secondary"
               fullWidth
               disabled={socialButtonsDisabled}
-              className="justify-center"
+              className="min-h-[3.5rem] justify-center py-2.5"
               onClick={handleGoogleLogin}
             >
               <FaGoogle aria-hidden="true" />
@@ -159,7 +159,7 @@ export function AccountLoginForm() {
               variant="secondary"
               fullWidth
               disabled={socialButtonsDisabled}
-              className="justify-center"
+              className="min-h-[3.5rem] justify-center py-2.5"
               onClick={handleFacebookLogin}
             >
               <FaFacebookF aria-hidden="true" />
@@ -168,19 +168,19 @@ export function AccountLoginForm() {
           </div>
 
           {socialMessage ? (
-            <InfoBox tone="muted" className="rounded-[1.2rem]">
+            <InfoBox tone="muted" className="rounded-[1.2rem] md:max-w-[32rem]">
               {socialMessage}
             </InfoBox>
           ) : null}
 
-          <div className="flex items-center gap-3 text-xs uppercase tracking-[0.22em] text-app-text-muted">
+          <div className="flex items-center gap-3 text-xs uppercase tracking-[0.22em] text-app-text-muted md:max-w-[32rem]">
             <span className="h-px flex-1 bg-app-border" />
             <span>o sigue con tu email</span>
             <span className="h-px flex-1 bg-app-border" />
           </div>
 
-          <form className="grid gap-4" onSubmit={handleSubmit}>
-            <FormGrid className="md:grid-cols-1">
+          <form className="grid max-w-[32rem] gap-4" onSubmit={handleSubmit}>
+            <div className="grid gap-4">
               <FormField label="Email" htmlFor="email" error={fieldErrors.email}>
                 <input
                   id="email"
@@ -200,9 +200,9 @@ export function AccountLoginForm() {
                   className={cn("form-control", fieldErrors.password && "border-red-500")}
                 />
               </FormField>
-            </FormGrid>
+            </div>
 
-            <Button type="submit" disabled={loading} fullWidth>
+            <Button type="submit" disabled={loading} fullWidth className="min-h-[3.6rem] py-2.5">
               {loading ? "Ingresando..." : "Entrar"}
             </Button>
 
@@ -211,7 +211,7 @@ export function AccountLoginForm() {
           </form>
         </SurfaceCard>
 
-        <SurfaceCard className="grid gap-4 p-5 md:p-6">
+        <SurfaceCard className="grid content-start gap-4 self-start p-5 md:p-6">
           <div className="grid gap-2">
             <p className="eyebrow">Registro tutor</p>
             <h2 className="m-0 font-display-ui text-[1.85rem] leading-tight">
