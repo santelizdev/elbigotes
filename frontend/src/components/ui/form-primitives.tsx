@@ -16,13 +16,15 @@ export function FormField({
   label,
   htmlFor,
   helper,
+  error,
   fullWidth = false,
   children,
   className,
 }: {
-  label: string;
+  label: ReactNode;
   htmlFor?: string;
   helper?: string;
+  error?: string;
   fullWidth?: boolean;
   children: ReactNode;
   className?: string;
@@ -34,6 +36,7 @@ export function FormField({
       </label>
       {children}
       {helper ? <span className="text-sm leading-6 text-app-text-muted">{helper}</span> : null}
+      {error ? <span className="text-sm font-medium leading-6 text-red-500">{error}</span> : null}
     </div>
   );
 }

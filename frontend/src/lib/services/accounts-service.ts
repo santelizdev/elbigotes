@@ -42,6 +42,35 @@ export interface PetOwnerRegistrationPayload {
   };
 }
 
+export interface TutorProfileDraft {
+  phone: string;
+  address_line?: string;
+  commune?: string;
+  region?: string;
+  marketing_opt_in?: boolean;
+  has_special_condition: boolean;
+  special_condition_notes?: string;
+  has_special_diet: boolean;
+  special_diet_notes?: string;
+  isEmailVerified: boolean;
+}
+
+export interface PetProfileDraft {
+  name: string;
+  type: string;
+  breed?: string;
+  sex?: string;
+  birth_date?: string;
+}
+
+export interface PetOwnerRegistrationDraft {
+  full_name: string;
+  email: string;
+  password: string;
+  tutor_profile: TutorProfileDraft;
+  pet_profile: PetProfileDraft;
+}
+
 interface UserSummary {
   id: number;
   email: string;
@@ -237,6 +266,32 @@ export async function registerPetOwnerAccount(
     method: "POST",
     body: JSON.stringify(payload),
   });
+}
+
+export function mapPetOwnerRegistrationDraftToPayload(
+  draft: PetOwnerRegistrationDraft,
+): PetOwnerRegistrationPayload {
+  const normalizedName = draft.full_name.trim().replace(/\s+/g, " ");
+  const [firstName = "", ...lastNameParts] = normalizedName.split(" ");
+
+  return {
+    email: draft.email,
+    password: draft.password,
+    first_name: firstName,
+    last_name: lastNameParts.join(" "),
+    phone: draft.tutor_profile.phone,
+    address_line: draft.tutor_profile.address_line,
+    commune: draft.tutor_profile.commune,
+    region: draft.tutor_profile.region,
+    marketing_opt_in: draft.tutor_profile.marketing_opt_in,
+    pet: {
+      name: draft.pet_profile.name,
+      species: draft.pet_profile.type,
+      breed: draft.pet_profile.breed,
+      sex: draft.pet_profile.sex,
+      birth_date: draft.pet_profile.birth_date,
+    },
+  };
 }
 
 function buildAuthHeaders(token: string) {
