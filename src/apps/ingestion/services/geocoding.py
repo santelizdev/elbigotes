@@ -1,9 +1,7 @@
-import json
 from dataclasses import dataclass
 from typing import Protocol
-from urllib.parse import urlencode
-from urllib.request import Request, urlopen
 
+import requests
 from django.conf import settings
 from django.contrib.gis.geos import Point
 
@@ -28,21 +26,19 @@ class NominatimGeocoder:
     provider_name = "nominatim"
 
     def geocode(self, query: str) -> GeocodingCandidate | None:
-        params = urlencode(
-            {
+        response = requests.get(
+            "https://nominatim.openstreetmap.org/search",
+            params={
                 "format": "jsonv2",
                 "limit": 1,
                 "countrycodes": "cl",
                 "q": query,
-            }
-        )
-        request = Request(
-            f"https://nominatim.openstreetmap.org/search?{params}",
+            },
             headers={"User-Agent": settings.GEOCODING_USER_AGENT},
+            timeout=settings.GEOCODING_TIMEOUT,
         )
-
-        with urlopen(request, timeout=settings.GEOCODING_TIMEOUT) as response:
-            payload = json.loads(response.read().decode("utf-8"))
+        response.raise_for_status()
+        payload = response.json()
 
         if not payload:
             return None

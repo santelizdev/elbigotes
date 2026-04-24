@@ -87,7 +87,11 @@ export function SiteHeader({ categories }: SiteHeaderProps) {
     .map((category) => ({
       href: category.route,
       label: category.shortLabel,
-    }));
+    }))
+    .concat({
+      href: "/jornadas-operativos",
+      label: "Jornadas/Operativos",
+    });
 
   useEffect(() => {
     setIsMenuOpen(false);

@@ -2,10 +2,10 @@ from urllib.parse import urlencode
 
 from django.conf import settings
 from django.http import HttpResponseRedirect
-from rest_framework.response import Response
-from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, permissions, status
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from apps.accounts.api.authentication import SignedTokenAuthentication
 from apps.accounts.api.permissions import IsBusinessOwner, IsPetOwner
@@ -24,6 +24,7 @@ from apps.accounts.api.serializers import (
     build_registration_catalog,
 )
 from apps.accounts.email_verification import verify_email_token
+from apps.accounts.models import SavedPlace
 from apps.accounts.oauth import (
     GoogleOAuthConfigurationError,
     GoogleOAuthExchangeError,
@@ -32,9 +33,11 @@ from apps.accounts.oauth import (
     get_or_create_user_from_google_profile,
 )
 from apps.accounts.tokens import create_access_token
-from apps.accounts.models import SavedPlace
+from apps.memberships.services import (
+    ensure_default_membership_for_owner,
+    sync_memberships_for_owner,
+)
 from apps.places.models import Place
-from apps.memberships.services import ensure_default_membership_for_owner, sync_memberships_for_owner
 
 
 class BusinessRegistrationView(generics.CreateAPIView):

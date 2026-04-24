@@ -1,30 +1,61 @@
+from zoneinfo import ZoneInfo
+
 from django.conf import settings
 from django.contrib.gis.db import models as gis_models
 from django.core.exceptions import ValidationError
-from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
-from django.utils import timezone
-
-from zoneinfo import ZoneInfo
-from django.utils import timezone
 from django.db import models
+from django.db.models import Q
+from django.utils import timezone
 
 from apps.core.models import TimeStampedModel
 from apps.core.utils.slugs import generate_unique_slug
 from apps.ingestion.models import Source
+from apps.places.chile_locations import commune_belongs_to_region
 from apps.places.choices import (
     ContactPointKind,
     DataIssueSeverity,
     DuplicateCandidateStatus,
+    FeaturedCatalogItemType,
     PlaceStatus,
     PlaceVerificationStatus,
+    PublicPetOperationCreatorType,
+    PublicPetOperationStatus,
+    PublicPetOperationType,
 )
 from apps.taxonomy.models import Category, Subcategory
 
+PUBLIC_PET_OPERATIONS_TIMEZONE = ZoneInfo("America/Santiago")
+
+
+def get_public_pet_operations_now():
+    return timezone.localtime(timezone.now(), PUBLIC_PET_OPERATIONS_TIMEZONE)
+
+
+class PublicPetOperationQuerySet(models.QuerySet):
+    def with_related(self):
+        return self
+
+    def non_draft(self):
+        return self.exclude(status=PublicPetOperationStatus.DRAFT)
+
+    def publicly_visible(self, now=None):
+        current_time = now or get_public_pet_operations_now()
+        return self.filter(status=PublicPetOperationStatus.PUBLISHED).filter(
+            Q(ends_at__gte=current_time)
+            | Q(ends_at__isnull=True, starts_at__gte=current_time)
+        )
+
+    def expirable(self, now=None):
+        current_time = now or get_public_pet_operations_now()
+        return self.filter(status=PublicPetOperationStatus.PUBLISHED).filter(
+            Q(ends_at__lt=current_time)
+            | Q(ends_at__isnull=True, starts_at__lt=current_time)
+        )
+
 
 class Place(TimeStampedModel):
-
-        # Horario crudo entregado por Google u otra fuente.
+    # Horario crudo entregado por Google u otra fuente.
     # Se conserva para trazabilidad y debugging.
     opening_hours_raw = models.JSONField(
         default=dict,
@@ -51,7 +82,7 @@ class Place(TimeStampedModel):
         default="America/Santiago",
         help_text="Zona horaria IANA usada para cálculos de apertura.",
     )
-    
+
     """
     Ficha pública principal del mapa. Se mantiene intencionalmente compacta;
     los contactos y la procedencia viven en tablas separadas para escalar sin rigidez.
@@ -172,6 +203,7 @@ class Place(TimeStampedModel):
 
     def __str__(self) -> str:
         return self.name
+
     def is_open_now_at(self, dt=None) -> bool:
         """
         Determina si el lugar está abierto en el instante indicado.
@@ -185,6 +217,183 @@ class Place(TimeStampedModel):
         from apps.places.services.hours import is_place_open_now
 
         return is_place_open_now(self, dt=dt)
+
+
+class FeaturedCatalogItem(TimeStampedModel):
+    title = models.CharField(max_length=200)
+    slug = models.SlugField(max_length=220, unique=True)
+    description = models.TextField(blank=True)
+    item_type = models.CharField(
+        max_length=20,
+        choices=FeaturedCatalogItemType.choices,
+    )
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.PROTECT,
+        related_name="featured_catalog_items",
+    )
+    image = models.ImageField(upload_to="places/featured-catalog/%Y/%m/", blank=True)
+    price_label = models.CharField(max_length=120, blank=True)
+    cta_label = models.CharField(max_length=120, blank=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ["title"]
+        verbose_name = "Featured catalog item"
+        verbose_name_plural = "Featured catalog items"
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = generate_unique_slug(self, self.title)
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self) -> str:
+        return self.title
+
+
+class PlaceFeaturedCatalogItem(TimeStampedModel):
+    place = models.ForeignKey(
+        Place,
+        on_delete=models.CASCADE,
+        related_name="featured_catalog_assignments",
+    )
+    featured_item = models.ForeignKey(
+        FeaturedCatalogItem,
+        on_delete=models.CASCADE,
+        related_name="place_assignments",
+    )
+    custom_price_label = models.CharField(max_length=120, blank=True)
+    custom_cta_url = models.URLField(blank=True)
+    is_active = models.BooleanField(default=True)
+    sort_order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["sort_order", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["place", "featured_item"],
+                name="places_featured_catalog_assignment_unique_pair",
+            )
+        ]
+        verbose_name = "Place featured catalog item"
+        verbose_name_plural = "Place featured catalog items"
+
+    def clean(self):
+        if (
+            self.place_id
+            and self.featured_item_id
+            and self.place.category_id != self.featured_item.category_id
+        ):
+            raise ValidationError(
+                {
+                    "featured_item": (
+                        "La categoría del item destacado debe coincidir con la categoría del place."
+                    )
+                }
+            )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    @property
+    def effective_price_label(self) -> str:
+        return self.custom_price_label or self.featured_item.price_label
+
+    @property
+    def effective_cta_url(self) -> str:
+        return self.custom_cta_url
+
+    def __str__(self) -> str:
+        return f"{self.place.name} - {self.featured_item.title}"
+
+
+class PublicPetOperation(TimeStampedModel):
+    title = models.CharField(max_length=200)
+    slug = models.SlugField(max_length=220, unique=True)
+    operation_type = models.CharField(
+        max_length=20,
+        choices=PublicPetOperationType.choices,
+    )
+    address = models.CharField(max_length=255)
+    commune = models.CharField(max_length=120)
+    region = models.CharField(max_length=120)
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
+    starts_at = models.DateTimeField()
+    ends_at = models.DateTimeField(null=True, blank=True)
+    requirements = models.TextField(blank=True)
+    image = models.ImageField(upload_to="places/public-operations/%Y/%m/", blank=True)
+    creator_type = models.CharField(
+        max_length=20,
+        choices=PublicPetOperationCreatorType.choices,
+    )
+    creator_name = models.CharField(max_length=160)
+    status = models.CharField(
+        max_length=20,
+        choices=PublicPetOperationStatus.choices,
+        default=PublicPetOperationStatus.DRAFT,
+    )
+
+    objects = PublicPetOperationQuerySet.as_manager()
+
+    class Meta:
+        ordering = ["starts_at", "title"]
+        indexes = [
+            models.Index(fields=["slug"], name="places_publ_slug_098f67_idx"),
+            models.Index(fields=["status", "starts_at"], name="places_publ_status__ec73ee_idx"),
+            models.Index(
+                fields=["operation_type", "commune"],
+                name="places_publ_operati_651f44_idx",
+            ),
+        ]
+        verbose_name = "Public pet operation"
+        verbose_name_plural = "Public pet operations"
+
+    def clean(self):
+        if (self.latitude is None) ^ (self.longitude is None):
+            raise ValidationError(
+                "Debes informar latitude y longitude juntas o dejar ambas vacías."
+            )
+
+        if self.ends_at and self.ends_at < self.starts_at:
+            raise ValidationError(
+                {"ends_at": "La fecha de término no puede ser anterior a starts_at."}
+            )
+
+        if self.region and self.commune and not commune_belongs_to_region(self.region, self.commune):
+            raise ValidationError(
+                {"commune": "La comuna seleccionada no pertenece a la región indicada."}
+            )
+
+        if self.status == PublicPetOperationStatus.PUBLISHED and (
+            self.latitude is None or self.longitude is None
+        ):
+            raise ValidationError(
+                {"latitude": "Debes confirmar una dirección con coordenadas antes de publicar el operativo."}
+            )
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = generate_unique_slug(self, self.title)
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    @property
+    def is_expired(self) -> bool:
+        reference_date = self.ends_at or self.starts_at
+        return timezone.localtime(reference_date, PUBLIC_PET_OPERATIONS_TIMEZONE) < get_public_pet_operations_now()
+
+    @property
+    def is_publicly_visible(self) -> bool:
+        if self.status != PublicPetOperationStatus.PUBLISHED:
+            return False
+        return not self.is_expired
+
+    def __str__(self) -> str:
+        return self.title
+
 
 class ContactPoint(TimeStampedModel):
     place = models.ForeignKey(Place, on_delete=models.CASCADE, related_name="contact_points")

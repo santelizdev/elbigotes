@@ -25,18 +25,16 @@ import ast
 import re
 from pathlib import Path
 
-from django.utils.text import slugify
 from django.contrib.gis.geos import Point
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.utils.text import slugify
 
-from apps.ingestion.models import ImportRecordStatus, ImportedPlaceRecord
+from apps.ingestion.models import ImportedPlaceRecord, ImportRecordStatus
 from apps.places.choices import PlaceStatus
 from apps.places.models import ContactPoint, Place
-from apps.taxonomy.models import Category, Subcategory
-
 from apps.places.services.hours import normalize_google_opening_hours
-
+from apps.taxonomy.models import Category, Subcategory
 
 # ---------------------------------------------------------------------------
 # Mapeo: category_slug del raw_payload → slug real en tu DB
@@ -816,7 +814,7 @@ class Command(BaseCommand):
         if not dry_run and stats["created"] > 0:
             self.stdout.write(
                 self.style.WARNING(
-                    f"\n  ⚠️  Los Places creados están en status DRAFT.\n"
-                    f"  Revisalos en /admin/places/place/ y cambia a PUBLISHED cuando estén listos."
+                    "\n  ⚠️  Los Places creados están en status DRAFT.\n"
+                    "  Revisalos en /admin/places/place/ y cambia a PUBLISHED cuando estén listos."
                 )
             )

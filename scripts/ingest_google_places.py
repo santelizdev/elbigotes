@@ -20,11 +20,12 @@ import os
 import sys
 import time
 import unicodedata
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Iterator
 
 import requests
+
 
 # ---------------------------------------------------------------------------
 # Bootstrap Django
@@ -44,13 +45,14 @@ sys.path.insert(0, str(SRC_ROOT))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.local")
 
 import django
+
 django.setup()
 
 from django.db import transaction
+
 from apps.ingestion.models import (
-    GeocodingStatus,
-    ImportRecordStatus,
     ImportedPlaceRecord,
+    ImportRecordStatus,
     Source,
     SourceDataset,
     SourceKind,

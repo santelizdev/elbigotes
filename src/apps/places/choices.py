@@ -32,3 +32,28 @@ class DuplicateCandidateStatus(models.TextChoices):
     OPEN = "open", "Open"
     CONFIRMED = "confirmed", "Confirmed"
     DISMISSED = "dismissed", "Dismissed"
+
+
+class FeaturedCatalogItemType(models.TextChoices):
+    PRODUCT = "product", "Product"
+    SERVICE = "service", "Service"
+    PROMO = "promo", "Promo"
+
+
+class PublicPetOperationType(models.TextChoices):
+    VACCINATION = "vaccination", "Vaccination"
+    STERILIZATION = "sterilization", "Sterilization"
+    MICROCHIP = "microchip", "Microchip"
+    ADOPTION = "adoption", "Adoption"
+    OTHER = "other", "Other"
+
+
+class PublicPetOperationStatus(models.TextChoices):
+    DRAFT = "draft", "Draft"
+    PUBLISHED = "published", "Published"
+    EXPIRED = "expired", "Expired"
+
+
+class PublicPetOperationCreatorType(models.TextChoices):
+    PUBLIC = "public", "Public"
+    PRIVATE = "private", "Private"

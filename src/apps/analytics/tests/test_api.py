@@ -5,7 +5,7 @@ from apps.accounts.models import User, UserRole
 from apps.accounts.tokens import create_access_token
 from apps.analytics.models import PlaceViewEvent, SearchEvent
 from apps.ingestion.models import Source
-from apps.memberships.models import MembershipAssignment, MembershipAssignmentStatus, MembershipPlan
+from apps.memberships.models import MembershipAssignment, MembershipPlan
 from apps.places.models import Place
 from apps.taxonomy.models import Category
 

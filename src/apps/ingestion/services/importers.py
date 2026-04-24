@@ -151,7 +151,7 @@ def _parse_coordinates(row: dict) -> tuple[float | None, float | None]:
 
 def _build_pet_place_external_id(name: str, commune: str, category_slug: str) -> str:
     signature = f"{name.lower()}|{commune.lower()}|{category_slug}"
-    digest = hashlib.sha1(signature.encode("utf-8")).hexdigest()[:16]
+    digest = hashlib.sha256(signature.encode("utf-8")).hexdigest()[:16]
     return f"{slugify(name)[:40] or 'place'}-{digest}"
 
 

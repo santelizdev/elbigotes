@@ -1,12 +1,14 @@
 import pytest
 from django.contrib.gis.geos import Point
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.test import override_settings
 from django.utils import timezone
 from rest_framework.test import APIClient
 
 from apps.accounts.models import BusinessKind, BusinessProfile, User, UserRole
 from apps.ingestion.models import Source
 from apps.memberships.models import MembershipAssignment, MembershipAssignmentStatus, MembershipPlan
-from apps.places.models import Place
+from apps.places.models import FeaturedCatalogItem, Place, PlaceFeaturedCatalogItem
 from apps.taxonomy.models import Category
 
 
@@ -184,6 +186,99 @@ def test_place_detail_returns_public_metadata_and_source():
     assert response.data["verification_status"] == "unverified"
     assert response.data["is_premium_verified"] is False
     assert response.data["can_claim"] is True
+
+
+@pytest.mark.django_db
+def test_place_detail_returns_active_featured_items_sorted_with_final_labels(tmp_path):
+    client = APIClient()
+    with override_settings(MEDIA_ROOT=tmp_path):
+        source = Source.objects.create(name="Seed Manual", slug="seed-manual")
+        category = Category.objects.create(name="Veterinarias", slug="veterinarias")
+        place = Place.objects.create(
+            name="Vet Destacada",
+            slug="vet-destacada",
+            category=category,
+            source=source,
+            status="active",
+            commune="Providencia",
+            region="Región Metropolitana",
+            formatted_address="Providencia, Región Metropolitana, Chile",
+            summary="Servicios destacados",
+        )
+        promo_image = SimpleUploadedFile(
+            "promo.gif",
+            (
+                b"GIF87a\x01\x00\x01\x00\x80\x00\x00\x00\x00\x00"
+                b"\xff\xff\xff!\xf9\x04\x01\x00\x00\x00\x00,\x00"
+                b"\x00\x00\x00\x01\x00\x01\x00\x00\x02\x02D\x01\x00;"
+            ),
+            content_type="image/gif",
+        )
+        first_item = FeaturedCatalogItem.objects.create(
+            title="Baño premium",
+            slug="bano-premium",
+            description="Spa y baño completo.",
+            item_type="service",
+            category=category,
+            price_label="Desde $18.990",
+            cta_label="Reservar",
+        )
+        second_item = FeaturedCatalogItem.objects.create(
+            title="Pack snack",
+            slug="pack-snack",
+            description="Snacks naturales para perros.",
+            item_type="product",
+            category=category,
+            image=promo_image,
+            price_label="Desde $7.990",
+            cta_label="Comprar",
+        )
+        inactive_item = FeaturedCatalogItem.objects.create(
+            title="Promo oculta",
+            slug="promo-oculta",
+            description="No debe salir en la API.",
+            item_type="promo",
+            category=category,
+            is_active=False,
+        )
+        PlaceFeaturedCatalogItem.objects.create(
+            place=place,
+            featured_item=first_item,
+            sort_order=2,
+            is_active=True,
+        )
+        PlaceFeaturedCatalogItem.objects.create(
+            place=place,
+            featured_item=second_item,
+            sort_order=1,
+            custom_price_label="Oferta lanzamiento",
+            custom_cta_url="https://elbigotes.cl/ofertas/pack-snack",
+            is_active=True,
+        )
+        PlaceFeaturedCatalogItem.objects.create(
+            place=place,
+            featured_item=inactive_item,
+            sort_order=0,
+            is_active=True,
+        )
+
+        response = client.get(f"/api/v1/places/{place.slug}/")
+
+    assert response.status_code == 200
+    assert [item["title"] for item in response.data["featured_items"]] == [
+        "Pack snack",
+        "Baño premium",
+    ]
+    assert response.data["featured_items"][0]["price_label"] == "Oferta lanzamiento"
+    assert response.data["featured_items"][0]["cta_label"] == "Comprar"
+    assert (
+        response.data["featured_items"][0]["cta_url"]
+        == "https://elbigotes.cl/ofertas/pack-snack"
+    )
+    assert response.data["featured_items"][0]["image_url"].endswith(".gif")
+    assert response.data["featured_items"][1]["price_label"] == "Desde $18.990"
+    assert response.data["featured_items"][1]["cta_url"] is None
+    assert response.data["featured_items"][1]["image_url"] is None
 
 
 @pytest.mark.django_db

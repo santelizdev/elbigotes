@@ -1,8 +1,8 @@
 from datetime import timedelta
 
 import pytest
-from django.core.exceptions import ValidationError
 from django.contrib.gis.geos import Point
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 from rest_framework.test import APIClient
 

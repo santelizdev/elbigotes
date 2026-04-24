@@ -1,15 +1,33 @@
+from django.conf import settings
 from django.contrib import admin
 from django.contrib.gis.admin import GISModelAdmin
+from django.utils.html import format_html
 
 from apps.ingestion.tasks import audit_places_consistency, geocode_place
 from apps.places.choices import PlaceVerificationStatus
-from apps.places.models import ContactPoint, DuplicatePlaceCandidate, Place, PlaceQualityIssue
+from apps.places.forms import PublicPetOperationAdminForm, build_public_pet_operation_admin_config
+from apps.places.models import (
+    ContactPoint,
+    DuplicatePlaceCandidate,
+    FeaturedCatalogItem,
+    Place,
+    PlaceFeaturedCatalogItem,
+    PlaceQualityIssue,
+    PublicPetOperation,
+)
 
 
 class ContactPointInline(admin.TabularInline):
     model = ContactPoint
     extra = 0
     fields = ("label", "kind", "value", "is_primary", "sort_order")
+
+
+class PlaceFeaturedCatalogItemInline(admin.TabularInline):
+    model = PlaceFeaturedCatalogItem
+    extra = 0
+    fields = ("featured_item", "custom_price_label", "custom_cta_url", "is_active", "sort_order")
+    autocomplete_fields = ("featured_item",)
 
 
 @admin.register(Place)
@@ -36,10 +54,18 @@ class PlaceAdmin(GISModelAdmin):
         "is_emergency_service",
         "region",
     )
-    search_fields = ("name", "slug", "summary", "formatted_address", "commune", "region")
+    search_fields = (
+        "name",
+        "slug",
+        "summary",
+        "street_address",
+        "formatted_address",
+        "commune",
+        "region",
+    )
     autocomplete_fields = ("category", "subcategory", "source", "owner_business_profile")
     prepopulated_fields = {"slug": ("name",)}
-    inlines = [ContactPointInline]
+    inlines = [ContactPointInline, PlaceFeaturedCatalogItemInline]
     readonly_fields = ("created_at", "updated_at")
     actions = (
         "mark_as_active",
@@ -97,6 +123,97 @@ class ContactPointAdmin(admin.ModelAdmin):
     list_filter = ("kind", "is_primary")
     search_fields = ("place__name", "value", "label")
     autocomplete_fields = ("place",)
+
+
+@admin.register(FeaturedCatalogItem)
+class FeaturedCatalogItemAdmin(admin.ModelAdmin):
+    list_display = ("title", "item_type", "category", "price_label", "cta_label", "is_active")
+    list_filter = ("item_type", "category", "is_active")
+    search_fields = ("title", "description")
+    autocomplete_fields = ("category",)
+    prepopulated_fields = {"slug": ("title",)}
+    readonly_fields = ("created_at", "updated_at")
+
+
+@admin.register(PlaceFeaturedCatalogItem)
+class PlaceFeaturedCatalogItemAdmin(admin.ModelAdmin):
+    list_display = ("place", "featured_item", "is_active", "sort_order", "updated_at")
+    list_filter = ("is_active",)
+    search_fields = (
+        "place__name",
+        "place__formatted_address",
+        "place__commune",
+        "featured_item__title",
+        "featured_item__description",
+    )
+    autocomplete_fields = ("place", "featured_item")
+    readonly_fields = ("created_at", "updated_at")
+
+
+@admin.register(PublicPetOperation)
+class PublicPetOperationAdmin(admin.ModelAdmin):
+    form = PublicPetOperationAdminForm
+    list_display = ("title", "operation_type", "commune", "starts_at", "status")
+    list_filter = ("operation_type", "status", "commune", "starts_at")
+    search_fields = ("title", "address", "commune", "requirements", "creator_name")
+    prepopulated_fields = {"slug": ("title",)}
+    readonly_fields = (
+        "location_preview",
+        "created_at",
+        "updated_at",
+        "is_expired",
+        "is_publicly_visible",
+    )
+    fields = (
+        "title",
+        "slug",
+        "operation_type",
+        "creator_type",
+        "creator_name",
+        "status",
+        "region",
+        "commune",
+        "address",
+        "latitude",
+        "longitude",
+        "location_preview",
+        "starts_at",
+        "ends_at",
+        "requirements",
+        "image",
+        "is_expired",
+        "is_publicly_visible",
+        "created_at",
+        "updated_at",
+    )
+
+    class Media:
+        css = {
+            "all": (
+                "places/admin/public_pet_operation_admin.css",
+            )
+        }
+        js = (
+            "places/admin/public_pet_operation_admin.js",
+        )
+
+    @admin.display(description="Mapa de confirmación")
+    def location_preview(self, obj):
+        config = build_public_pet_operation_admin_config(
+            google_maps_api_key=settings.GOOGLE_MAPS_API_KEY,
+            latitude=getattr(obj, "latitude", None),
+            longitude=getattr(obj, "longitude", None),
+        )
+        return format_html(
+            '<div class="public-pet-operation-admin" data-public-pet-operation-config="{}">'
+            '<p class="help">Escribe la dirección, selecciona una sugerencia de Google y confirma visualmente el punto sugerido antes de publicar.</p>'
+            '<div class="public-pet-operation-admin__status" data-role="status"></div>'
+            '<div class="public-pet-operation-admin__map" data-role="map"></div>'
+            '<script type="application/json" id="public-pet-operation-admin-config">{}</script>'
+            "</div>",
+            config,
+            config,
+        )
 
 
 @admin.register(PlaceQualityIssue)

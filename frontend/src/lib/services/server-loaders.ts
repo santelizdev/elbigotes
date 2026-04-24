@@ -1,7 +1,8 @@
 import { ApiRequestError } from "@/lib/services/api-client";
 import { getLostPetReports } from "@/lib/services/lost-pets-service";
 import { getPlaceBySlug, getPlaces } from "@/lib/services/places-service";
-import { LostPetReport, Place, PlaceFilters } from "@/lib/types";
+import { getPublicPetOperationBySlug, getPublicPetOperations } from "@/lib/services/public-pet-operations-service";
+import { LostPetReport, Place, PlaceFilters, PublicPetOperation } from "@/lib/types";
 
 function logLoaderFailure(scope: string, error: unknown) {
   if (error instanceof ApiRequestError) {
@@ -106,5 +107,37 @@ export async function loadPlaceDetailData(slug: string): Promise<{
     }
     logLoaderFailure(`places:detail:${slug}`, error);
     return { place: null, hasError: true };
+  }
+}
+
+export async function loadPublicPetOperationsPageData(): Promise<{
+  operations: PublicPetOperation[];
+  hasError: boolean;
+}> {
+  try {
+    const operations = await getPublicPetOperations();
+    return { operations, hasError: false };
+  } catch (error) {
+    if (isDynamicServerUsageError(error)) {
+      throw error;
+    }
+    logLoaderFailure("public-operations:index", error);
+    return { operations: [], hasError: true };
+  }
+}
+
+export async function loadPublicPetOperationDetailData(slug: string): Promise<{
+  operation: PublicPetOperation | null;
+  hasError: boolean;
+}> {
+  try {
+    const operation = await getPublicPetOperationBySlug(slug);
+    return { operation, hasError: false };
+  } catch (error) {
+    if (isDynamicServerUsageError(error)) {
+      throw error;
+    }
+    logLoaderFailure(`public-operations:detail:${slug}`, error);
+    return { operation: null, hasError: true };
   }
 }

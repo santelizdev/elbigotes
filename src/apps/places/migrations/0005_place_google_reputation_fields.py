@@ -1,7 +1,7 @@
 from decimal import Decimal, InvalidOperation
 
-from django.db import migrations, models
 import django.core.validators
+from django.db import migrations, models
 
 
 def build_google_maps_url(place_id: str) -> str:

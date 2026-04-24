@@ -10,7 +10,6 @@ from apps.places.models import Place
 from apps.places.services.duplicates import rebuild_duplicate_candidates
 from apps.places.services.quality import audit_places, audit_single_place
 
-
 logger = logging.getLogger(__name__)
 
 

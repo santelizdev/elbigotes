@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from apps.reviews.models import PlaceReview, ReviewStatus
+from apps.reviews.models import PlaceReview
 
 
 @admin.register(PlaceReview)

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from datetime import datetime, time
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
-from django.utils import timezone
 
+from django.utils import timezone
 
 DAY_NAMES = [
     "monday",

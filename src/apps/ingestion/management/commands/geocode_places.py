@@ -27,11 +27,9 @@ import requests
 from django.contrib.gis.geos import Point
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from django.utils import timezone
 
 from apps.ingestion.models import GeocodingLog, GeocodingStatus
 from apps.places.models import Place
-
 
 GEOCODING_URL = "https://maps.googleapis.com/maps/api/geocode/json"
 

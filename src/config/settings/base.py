@@ -2,7 +2,6 @@ from pathlib import Path
 
 from config.settings.env import BASE_DIR, get_bool, get_env, get_int, get_list
 
-
 SECRET_KEY = get_env("DJANGO_SECRET_KEY", "unsafe-development-secret-key")
 DEBUG = get_bool("DJANGO_DEBUG", False)
 TESTING = False
@@ -133,6 +132,7 @@ GEOCODING_USER_AGENT = get_env("GEOCODING_USER_AGENT", "elbigotes-backend/0.1")
 SITE_URL = (get_env("NEXT_PUBLIC_SITE_URL", "http://localhost:13000") or "http://localhost:13000").rstrip("/")
 GOOGLE_CLIENT_ID = get_env("GOOGLE_CLIENT_ID", "") or ""
 GOOGLE_CLIENT_SECRET = get_env("GOOGLE_CLIENT_SECRET", "") or ""
+GOOGLE_MAPS_API_KEY = get_env("GOOGLE_MAPS_API_KEY", "") or ""
 BREVO_API_KEY = get_env("BREVO_API_KEY", "") or ""
 BREVO_SENDER_EMAIL = get_env("BREVO_SENDER_EMAIL", "") or ""
 BREVO_SENDER_NAME = get_env("BREVO_SENDER_NAME", "ElBigotes") or "ElBigotes"
@@ -148,6 +148,10 @@ CELERY_BEAT_SCHEDULE = {
     },
     "cleanup-old-sync-runs": {
         "task": "apps.ingestion.tasks.cleanup_old_sync_runs",
+        "schedule": 24 * 3600.0,
+    },
+    "expire-public-pet-operations": {
+        "task": "apps.places.tasks.expire_public_pet_operations_task",
         "schedule": 24 * 3600.0,
     },
 }

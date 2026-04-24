@@ -1,5 +1,5 @@
-from io import BytesIO
 import re
+from io import BytesIO
 
 from django.contrib.gis.geos import Point
 from django.core.files.base import ContentFile

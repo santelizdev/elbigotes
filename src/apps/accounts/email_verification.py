@@ -1,8 +1,6 @@
-import json
 import logging
-from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
 
+import requests
 from django.conf import settings
 
 from apps.accounts.models import User
@@ -54,23 +52,20 @@ def send_verification_email(user: User) -> bool:
     if settings.BREVO_REPLY_TO:
         payload["replyTo"] = {"email": settings.BREVO_REPLY_TO, "name": settings.BREVO_SENDER_NAME}
 
-    request = Request(
-        BREVO_SEND_EMAIL_URL,
-        data=json.dumps(payload).encode("utf-8"),
-        headers={
-            "Content-Type": "application/json",
-            "accept": "application/json",
-            "api-key": settings.BREVO_API_KEY,
-        },
-        method="POST",
-    )
-
     try:
-        with urlopen(request, timeout=15) as response:
-            response.read()
+        response = requests.post(
+            BREVO_SEND_EMAIL_URL,
+            json=payload,
+            headers={
+                "accept": "application/json",
+                "api-key": settings.BREVO_API_KEY,
+            },
+            timeout=15,
+        )
+        response.raise_for_status()
         logger.info("Sent verification email to %s", user.email)
         return True
-    except (HTTPError, URLError, TimeoutError) as exc:
+    except requests.RequestException as exc:
         logger.exception("Failed to send Brevo verification email to %s: %s", user.email, exc)
         return False
 

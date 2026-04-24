@@ -1,10 +1,10 @@
 from rest_framework import generics
 
-from apps.lost_pets.choices import LostPetModerationStatus
 from apps.lost_pets.api.serializers import (
     LostPetReportCreateSerializer,
     LostPetReportListSerializer,
 )
+from apps.lost_pets.choices import LostPetModerationStatus
 from apps.lost_pets.models import LostPetReport
 
 

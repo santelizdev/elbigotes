@@ -1,9 +1,8 @@
-import json
 import logging
 import secrets
 from urllib.parse import urlencode
-from urllib.request import Request, urlopen
 
+import requests
 from django.conf import settings
 
 from apps.accounts.models import PetOwnerProfile, User, UserRole
@@ -53,24 +52,15 @@ def build_google_oauth_start_url(next_path: str = "/ingresar", site_url: str | N
 
 
 def _post_json(url: str, payload: dict) -> dict:
-    request = Request(
-        url,
-        data=urlencode(payload).encode("utf-8"),
-        headers={"Content-Type": "application/x-www-form-urlencoded"},
-        method="POST",
-    )
-    with urlopen(request, timeout=15) as response:
-        return json.loads(response.read().decode("utf-8"))
+    response = requests.post(url, data=payload, timeout=15)
+    response.raise_for_status()
+    return response.json()
 
 
 def _get_json(url: str, access_token: str) -> dict:
-    request = Request(
-        url,
-        headers={"Authorization": f"Bearer {access_token}"},
-        method="GET",
-    )
-    with urlopen(request, timeout=15) as response:
-        return json.loads(response.read().decode("utf-8"))
+    response = requests.get(url, headers={"Authorization": f"Bearer {access_token}"}, timeout=15)
+    response.raise_for_status()
+    return response.json()
 
 
 def exchange_google_code_for_profile(

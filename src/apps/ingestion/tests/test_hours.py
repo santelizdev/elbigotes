@@ -1,9 +1,10 @@
 from datetime import datetime
+
 from django.test import SimpleTestCase
 
 from apps.places.services.hours import (
-    normalize_google_opening_hours,
     is_schedule_open_now,
+    normalize_google_opening_hours,
 )
 
 

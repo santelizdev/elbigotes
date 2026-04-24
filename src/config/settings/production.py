@@ -1,6 +1,6 @@
-from .base import *  # noqa: F403,F401
 from config.settings.env import get_bool
 
+from .base import *  # noqa: F403,F401
 
 DEBUG = False
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")

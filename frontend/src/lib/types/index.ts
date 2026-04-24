@@ -57,6 +57,28 @@ export interface LostPetReport {
   createdAt: string;
 }
 
+export interface PublicPetOperation {
+  title: string;
+  slug: string;
+  operationType: string;
+  creatorType: string;
+  creatorName: string;
+  address: string;
+  commune: string;
+  region: string;
+  latitude: number | null;
+  longitude: number | null;
+  startsAt: string;
+  endsAt?: string | null;
+  requirements?: string;
+  imageUrl?: string | null;
+  status: string;
+  isExpired: boolean;
+  isPubliclyVisible: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface PlaceFilters {
   category?: string;
   search?: string;

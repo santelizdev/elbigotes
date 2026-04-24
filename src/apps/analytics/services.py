@@ -13,7 +13,6 @@ from apps.places.services.verification import (
     get_place_effective_verification_status,
 )
 
-
 PHONE_USER_AGENT_MARKERS = ("iphone", "android", "mobile", "windows phone")
 TABLET_USER_AGENT_MARKERS = ("ipad", "tablet")
 

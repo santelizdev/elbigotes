@@ -1,7 +1,7 @@
 from django.db.models import Q
 from django_filters import rest_framework as filters
 
-from apps.places.models import Place
+from apps.places.models import Place, PublicPetOperation, get_public_pet_operations_now
 
 
 class PlaceFilterSet(filters.FilterSet):
@@ -38,3 +38,18 @@ class PlaceFilterSet(filters.FilterSet):
             return queryset.filter(is_verified=True)
         return queryset
 
+
+class PublicPetOperationFilterSet(filters.FilterSet):
+    operation_type = filters.CharFilter(field_name="operation_type", lookup_expr="iexact")
+    commune = filters.CharFilter(field_name="commune", lookup_expr="icontains")
+    status = filters.CharFilter(field_name="status", lookup_expr="iexact")
+    upcoming = filters.BooleanFilter(method="filter_upcoming")
+
+    class Meta:
+        model = PublicPetOperation
+        fields = ["operation_type", "commune", "status"]
+
+    def filter_upcoming(self, queryset, name, value):
+        if value:
+            return queryset.filter(starts_at__gte=get_public_pet_operations_now())
+        return queryset
