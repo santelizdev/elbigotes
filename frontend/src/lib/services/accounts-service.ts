@@ -52,7 +52,6 @@ export interface TutorProfileDraft {
   special_condition_notes?: string;
   has_special_diet: boolean;
   special_diet_notes?: string;
-  isEmailVerified: boolean;
 }
 
 export interface PetProfileDraft {
@@ -300,6 +299,13 @@ function buildAuthHeaders(token: string) {
   };
 }
 
+function notifyAuthChange() {
+  if (typeof window === "undefined") {
+    return;
+  }
+  window.dispatchEvent(new Event("elbigotes-auth-changed"));
+}
+
 export function getStoredAccessToken(): string | null {
   if (typeof window === "undefined") {
     return null;
@@ -312,6 +318,7 @@ export function setStoredAccessToken(token: string) {
     return;
   }
   window.localStorage.setItem("elbigotes-access-token", token);
+  notifyAuthChange();
 }
 
 export function clearStoredAccessToken() {
@@ -319,6 +326,7 @@ export function clearStoredAccessToken() {
     return;
   }
   window.localStorage.removeItem("elbigotes-access-token");
+  notifyAuthChange();
 }
 
 export async function loginAccount(payload: AccountLoginPayload): Promise<AccountLoginResponse> {

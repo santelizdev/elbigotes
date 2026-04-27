@@ -1,7 +1,6 @@
 from django.contrib.gis.geos import Point
 from django.db import transaction
 
-from apps.accounts.email_verification import send_verification_email
 from apps.accounts.models import (
     BusinessKind,
     BusinessProfile,
@@ -100,7 +99,6 @@ def _apply_business_place_fields(place, *, profile, user, place_data, is_primary
         "registration_origin": "public_business_signup" if is_primary else "business_branch_signup",
         "registration_email": user.email,
         "public_contact_email": user.email,
-        "email_verification_status": "pending",
     }
     place.save()
     _sync_contact_points(
@@ -136,6 +134,7 @@ def register_business_account(validated_data):
     password = validated_data.pop("password")
     user = User.objects.create_user(
         password=password,
+        email_verified=True,
         role=UserRole.BUSINESS_OWNER,
         **validated_data["user"],
     )
@@ -153,7 +152,6 @@ def register_business_account(validated_data):
     profile.place = place
     profile.save(update_fields=["place", "updated_at"])
     assign_default_business_membership(profile)
-    send_verification_email(user)
     return user, profile
 
 
@@ -224,11 +222,11 @@ def register_pet_owner_account(validated_data):
     initial_pet = validated_data.pop("pet")
     user = User.objects.create_user(
         password=password,
+        email_verified=True,
         role=UserRole.PET_OWNER,
         **validated_data["user"],
     )
     profile = PetOwnerProfile.objects.create(user=user, **validated_data["profile"])
     pet = PetProfile.objects.create(owner=profile, **initial_pet)
     assign_default_pet_owner_membership(profile)
-    send_verification_email(user)
     return user, profile, pet

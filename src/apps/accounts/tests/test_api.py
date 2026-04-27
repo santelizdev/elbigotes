@@ -58,6 +58,7 @@ def test_register_business_account_creates_profile_and_primary_place():
     profile = BusinessProfile.objects.get(user=user)
 
     assert user.role == UserRole.BUSINESS_OWNER
+    assert user.email_verified is True
     assert profile.place is not None
     assert profile.place.category.slug == "veterinarias"
     assert profile.place.status == "draft"
@@ -138,6 +139,7 @@ def test_register_pet_owner_account_creates_profile_and_initial_pet():
     pet = PetProfile.objects.get(owner=profile)
 
     assert user.role == UserRole.PET_OWNER
+    assert user.email_verified is True
     assert pet.name == "Luna"
     assert pet.species == "dog"
     membership = MembershipAssignment.objects.get(owner_object_id=profile.id)

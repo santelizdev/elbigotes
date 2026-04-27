@@ -2,25 +2,19 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { ThemeToggleButton } from "@/components/chrome/theme-toggle";
 import { CategoryDefinition } from "@/lib/constants/categories";
+import {
+  clearStoredAccessToken,
+  getStoredAccessToken,
+} from "@/lib/services/accounts-service";
 import { cn } from "@/lib/utils/cn";
 
 interface SiteHeaderProps {
   categories: CategoryDefinition[];
-}
-
-type ThemeMode = "dark" | "light";
-
-function getCurrentTheme(): ThemeMode {
-  if (typeof document === "undefined") {
-    return "light";
-  }
-
-  return document.documentElement.dataset.theme === "light" ? "light" : "dark";
 }
 
 function UserIcon() {
@@ -28,6 +22,39 @@ function UserIcon() {
     <svg viewBox="0 0 24 24" role="presentation" focusable="false">
       <path
         d="M12 12.25a4.25 4.25 0 1 0-4.25-4.25A4.25 4.25 0 0 0 12 12.25Zm0 1.5c-4.22 0-7.75 2.47-7.75 5.5a.75.75 0 0 0 1.5 0c0-2 2.62-4 6.25-4s6.25 2 6.25 4a.75.75 0 0 0 1.5 0c0-3.03-3.53-5.5-7.75-5.5Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+function LogoutIcon() {
+  return (
+    <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+      <path
+        d="M13.25 4a.75.75 0 0 1 .75-.75h3A2.75 2.75 0 0 1 19.75 6v12A2.75 2.75 0 0 1 17 20.75h-3a.75.75 0 0 1 0-1.5h3A1.25 1.25 0 0 0 18.25 18V6A1.25 1.25 0 0 0 17 4.75h-3a.75.75 0 0 1-.75-.75Zm-6.22 7.47a.75.75 0 0 0 0 1.06l2.75 2.75a.75.75 0 1 0 1.06-1.06l-1.47-1.47H15a.75.75 0 0 0 0-1.5H9.37l1.47-1.47a.75.75 0 0 0-1.06-1.06l-2.75 2.75Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+function RegisterIcon() {
+  return (
+    <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+      <path
+        d="M12 12.25a4.25 4.25 0 1 0-4.25-4.25A4.25 4.25 0 0 0 12 12.25Zm0 1.5c-4.22 0-7.75 2.47-7.75 5.5a.75.75 0 0 0 1.5 0c0-2 2.62-4 6.25-4 1.03 0 2 .16 2.87.46a.75.75 0 1 0 .5-1.41 10.06 10.06 0 0 0-3.37-.55Zm6-2a.75.75 0 0 0-.75.75V14h-1.5a.75.75 0 0 0 0 1.5h1.5V17a.75.75 0 0 0 1.5 0v-1.5h1.5a.75.75 0 0 0 0-1.5h-1.5v-1.5a.75.75 0 0 0-.75-.75Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+function ClaimBusinessIcon() {
+  return (
+    <svg viewBox="0 0 24 24" role="presentation" focusable="false">
+      <path
+        d="M4.75 5A2.75 2.75 0 0 1 7.5 2.25h9A2.75 2.75 0 0 1 19.25 5v2.47l.53.53a.75.75 0 0 1 0 1.06l-1.03 1.03V18A2.75 2.75 0 0 1 16 20.75H7.5A2.75 2.75 0 0 1 4.75 18V5Zm1.5 0A1.25 1.25 0 0 0 7.5 6.25h9A1.25 1.25 0 0 0 17.75 5 1.25 1.25 0 0 0 16.5 3.75h-9A1.25 1.25 0 0 0 6.25 5Zm0 3.37V18A1.25 1.25 0 0 0 7.5 19.25H16A1.25 1.25 0 0 0 17.25 18v-6.47l-1.72 1.72a.75.75 0 0 1-.53.22h-1.5a.75.75 0 0 1-.75-.75v-1.5a.75.75 0 0 1 .22-.53l4.69-4.69V7.75h-11Zm8 3.59v.01h.01l3.93-3.94-.01-.01-3.93 3.94Z"
         fill="currentColor"
       />
     </svg>
@@ -76,11 +103,12 @@ const navLinkClass =
 
 export function SiteHeader({ categories }: SiteHeaderProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const categoriesMenuRef = useRef<HTMLDivElement | null>(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
-  // Keep the initial render SSR-safe, then hydrate the real client theme.
-  const [theme, setTheme] = useState<ThemeMode>("light");
+  const [isMobileCategoriesOpen, setIsMobileCategoriesOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const placeNavItems = categories
     .filter((category) => category.kind === "place")
@@ -96,21 +124,27 @@ export function SiteHeader({ categories }: SiteHeaderProps) {
   useEffect(() => {
     setIsMenuOpen(false);
     setIsCategoriesOpen(false);
+    setIsMobileCategoriesOpen(false);
   }, [pathname]);
 
   useEffect(() => {
-    setTheme(getCurrentTheme());
-    const observer = new MutationObserver(() => {
-      setTheme(getCurrentTheme());
-    });
+    function syncAuthState() {
+      setIsAuthenticated(Boolean(getStoredAccessToken()));
+    }
 
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["data-theme"],
-    });
+    syncAuthState();
+    window.addEventListener("storage", syncAuthState);
+    window.addEventListener("elbigotes-auth-changed", syncAuthState);
 
-    return () => observer.disconnect();
+    return () => {
+      window.removeEventListener("storage", syncAuthState);
+      window.removeEventListener("elbigotes-auth-changed", syncAuthState);
+    };
   }, []);
+
+  useEffect(() => {
+    setIsAuthenticated(Boolean(getStoredAccessToken()));
+  }, [pathname]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -139,10 +173,14 @@ export function SiteHeader({ categories }: SiteHeaderProps) {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [isMenuOpen]);
 
-  const publishButtonClass =
-    theme === "dark"
-      ? "border border-[#123038]/10 bg-white text-[#123038]"
-      : "border-transparent bg-[linear-gradient(135deg,var(--accent-emerald),#106b78)] text-white";
+  function handleLogout() {
+    clearStoredAccessToken();
+    setIsMenuOpen(false);
+    setIsCategoriesOpen(false);
+    setIsMobileCategoriesOpen(false);
+    router.push("/");
+    router.refresh();
+  }
 
   return (
     <header className="sticky top-0 z-40 overflow-visible border-b border-app-border-strong bg-[color-mix(in_srgb,var(--surface)_88%,transparent)] backdrop-blur-[18px]">
@@ -207,20 +245,28 @@ export function SiteHeader({ categories }: SiteHeaderProps) {
               Reviews
             </Link>
 
-            <Link href="/ingresar" className={navLinkClass}>
-              <span className="grid h-4 w-4 place-items-center">
-                <UserIcon />
-              </span>
-              <span>Ingresar</span>
-            </Link>
+            {isAuthenticated ? (
+              <button type="button" className={navLinkClass} onClick={handleLogout}>
+                <span className="grid h-4 w-4 place-items-center">
+                  <LogoutIcon />
+                </span>
+                <span>Salir</span>
+              </button>
+            ) : (
+              <Link href="/ingresar" className={navLinkClass}>
+                <span className="grid h-4 w-4 place-items-center">
+                  <UserIcon />
+                </span>
+                <span>Ingresar</span>
+              </Link>
+            )}
 
             <ThemeToggleButton compact />
 
             <Link
               href="/registro/negocio"
               className={cn(
-                "inline-flex min-h-[2.9rem] items-center justify-center rounded-full border px-4 py-3 font-semibold no-underline shadow-[0_14px_28px_rgba(7,20,25,0.08)] transition duration-150 hover:-translate-y-px",
-                publishButtonClass,
+                "site-header-business-cta inline-flex min-h-[2.9rem] items-center justify-center rounded-full px-4 py-3 font-semibold no-underline transition duration-150 hover:-translate-y-px",
               )}
             >
               Registrar negocio
@@ -249,11 +295,24 @@ export function SiteHeader({ categories }: SiteHeaderProps) {
           aria-label="Navegación principal móvil"
         >
           <div className="grid gap-3 rounded-[1.35rem] border border-app-border-strong bg-[color-mix(in_srgb,var(--surface-raised)_95%,transparent)] p-4 shadow-[0_20px_48px_rgba(0,0,0,0.24)]">
-            <div className="grid gap-2">
-              <span className="text-[0.76rem] uppercase tracking-[0.14em] text-app-text-muted">
-                Categorías
+            <button
+              type="button"
+              className="inline-flex w-full items-center justify-between rounded-2xl bg-white/5 px-4 py-3 text-app-text"
+              aria-expanded={isMobileCategoriesOpen}
+              aria-controls="mobile-categories-menu"
+              onClick={() => setIsMobileCategoriesOpen((current) => !current)}
+            >
+              <span className="inline-flex items-center gap-2">
+                <span className="grid h-4 w-4 place-items-center">
+                  <CategoriesIcon />
+                </span>
+                <span>Categorías</span>
               </span>
-              <ul className="m-0 grid list-none gap-1 p-0">
+              <ChevronIcon open={isMobileCategoriesOpen} />
+            </button>
+
+            {isMobileCategoriesOpen ? (
+              <ul id="mobile-categories-menu" className="m-0 grid list-none gap-1 p-0">
                 {placeNavItems.map((item) => (
                   <li key={item.href}>
                     <Link
@@ -265,7 +324,7 @@ export function SiteHeader({ categories }: SiteHeaderProps) {
                   </li>
                 ))}
               </ul>
-            </div>
+            ) : null}
 
             <Link
               href="/reviews"
@@ -274,14 +333,47 @@ export function SiteHeader({ categories }: SiteHeaderProps) {
               Reviews
             </Link>
 
+            {isAuthenticated ? (
+              <button
+                type="button"
+                className="inline-flex w-full items-center gap-2 rounded-2xl bg-white/5 px-4 py-3 text-app-text no-underline"
+                onClick={handleLogout}
+              >
+                <span className="grid h-4 w-4 place-items-center">
+                  <LogoutIcon />
+                </span>
+                <span>Salir</span>
+              </button>
+            ) : (
+              <Link
+                href="/ingresar"
+                className="inline-flex w-full items-center gap-2 rounded-2xl bg-white/5 px-4 py-3 text-app-text no-underline"
+              >
+                <span className="grid h-4 w-4 place-items-center">
+                  <UserIcon />
+                </span>
+                <span>Iniciar sesión</span>
+              </Link>
+            )}
+
             <Link
-              href="/ingresar"
+              href="/registro"
               className="inline-flex w-full items-center gap-2 rounded-2xl bg-white/5 px-4 py-3 text-app-text no-underline"
             >
               <span className="grid h-4 w-4 place-items-center">
-                <UserIcon />
+                <RegisterIcon />
               </span>
-              <span>Ingresar</span>
+              <span>Registrarse</span>
+            </Link>
+
+            <Link
+              href="/reclamar-negocio"
+              className="inline-flex w-full items-center gap-2 rounded-2xl bg-white/5 px-4 py-3 text-app-text no-underline"
+            >
+              <span className="grid h-4 w-4 place-items-center">
+                <ClaimBusinessIcon />
+              </span>
+              <span>Reclamar negocio</span>
             </Link>
 
             <div className="grid gap-3">
@@ -289,8 +381,7 @@ export function SiteHeader({ categories }: SiteHeaderProps) {
               <Link
                 href="/registro/negocio"
                 className={cn(
-                  "inline-flex min-h-[2.9rem] w-full items-center justify-center rounded-full border px-4 py-3 font-semibold no-underline shadow-[0_14px_28px_rgba(7,20,25,0.08)]",
-                  publishButtonClass,
+                  "site-header-business-cta inline-flex min-h-[2.9rem] w-full items-center justify-center rounded-full px-4 py-3 font-semibold no-underline",
                 )}
               >
                 Registrar negocio

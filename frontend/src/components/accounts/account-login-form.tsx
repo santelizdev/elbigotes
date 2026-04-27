@@ -2,7 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { FaFacebookF, FaGoogle } from "react-icons/fa6";
+import { FaGoogle } from "react-icons/fa6";
 
 import { PetOwnerRegistrationPanel } from "@/components/accounts/pet-owner-registration-panel";
 import { ErrorState } from "@/components/shared/error-state";
@@ -23,7 +23,6 @@ interface LoginFieldErrors {
 
 const GOOGLE_AUTH_URL =
   process.env.NEXT_PUBLIC_GOOGLE_AUTH_URL?.trim() || "/api/v1/accounts/oauth/google/start/";
-const FACEBOOK_AUTH_URL = process.env.NEXT_PUBLIC_FACEBOOK_AUTH_URL?.trim() || "";
 
 function buildLoginFieldErrors(email: string, password: string): LoginFieldErrors {
   const errors: LoginFieldErrors = {};
@@ -108,26 +107,12 @@ export function AccountLoginForm() {
 
     if (!GOOGLE_AUTH_URL) {
       setSocialMessage(
-        "Google OAuth aún no está conectado en frontend. Falta configurar NEXT_PUBLIC_GOOGLE_AUTH_URL y el callback del backend.",
+        "Google OAuth aún no está conectado en frontend. Falta configurar NEXT_PUBLIC_GOOGLE_AUTH_URL.",
       );
       return;
     }
 
     window.location.assign(`${GOOGLE_AUTH_URL}?next=/mi-cuenta`);
-  }
-
-  function handleFacebookLogin() {
-    setSocialMessage(null);
-
-    if (!FACEBOOK_AUTH_URL) {
-      setSocialMessage(
-        "Facebook OAuth aún no está conectado en frontend. Falta configurar NEXT_PUBLIC_FACEBOOK_AUTH_URL y el callback del backend.",
-      );
-      return;
-    }
-
-    // TODO(auth): conectar este redirect con el callback OAuth real del backend.
-    window.location.assign(FACEBOOK_AUTH_URL);
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -182,7 +167,7 @@ export function AccountLoginForm() {
       <PageHero
         eyebrow="Acceso cliente"
         title="Ingresa o crea tu cuenta de tutor"
-        description="Mantuvimos el acceso actual y sumamos un registro más claro para tutores de mascotas, listo para crecer con login social y validación por correo."
+        description="Mantuvimos el acceso actual y sumamos un registro más claro para tutores de mascotas, con ingreso clásico y acceso con Google."
         className="p-6"
       />
 
@@ -207,18 +192,6 @@ export function AccountLoginForm() {
             >
               <FaGoogle aria-hidden="true" />
               Continuar con Google
-            </Button>
-
-            <Button
-              type="button"
-              variant="secondary"
-              fullWidth
-              disabled={socialButtonsDisabled}
-              className="min-h-[3.5rem] justify-center py-2.5"
-              onClick={handleFacebookLogin}
-            >
-              <FaFacebookF aria-hidden="true" />
-              Continuar con Facebook
             </Button>
           </div>
 
@@ -274,8 +247,7 @@ export function AccountLoginForm() {
             </h2>
             <p className="m-0 text-sm leading-7 text-app-text-soft">
               El flujo ya separa autenticación, perfil del tutor y datos de la mascota para que
-              luego podamos sumar más mascotas, campañas y verificación por correo sin rehacer la
-              base.
+              luego podamos sumar más mascotas y campañas sin rehacer la base.
             </p>
           </div>
 

@@ -28,19 +28,19 @@ def google_oauth_is_configured() -> bool:
     return bool(settings.GOOGLE_CLIENT_ID and settings.GOOGLE_CLIENT_SECRET and settings.SITE_URL)
 
 
-def build_google_callback_url(site_url: str | None = None) -> str:
-    base_url = (site_url or settings.SITE_URL).rstrip("/")
+def build_google_callback_url() -> str:
+    base_url = settings.SITE_URL.rstrip("/")
     return f"{base_url}/api/v1/accounts/oauth/google/callback/"
 
 
-def build_google_oauth_start_url(next_path: str = "/ingresar", site_url: str | None = None) -> str:
+def build_google_oauth_start_url(next_path: str = "/ingresar") -> str:
     if not google_oauth_is_configured():
         raise GoogleOAuthConfigurationError("Google OAuth is not configured.")
 
     query = urlencode(
         {
             "client_id": settings.GOOGLE_CLIENT_ID,
-            "redirect_uri": build_google_callback_url(site_url),
+            "redirect_uri": build_google_callback_url(),
             "response_type": "code",
             "scope": "openid email profile",
             "access_type": "online",
@@ -67,7 +67,6 @@ def exchange_google_code_for_profile(
     *,
     code: str,
     state_token: str,
-    site_url: str | None = None,
 ) -> tuple[dict, dict]:
     if not google_oauth_is_configured():
         raise GoogleOAuthConfigurationError("Google OAuth is not configured.")
@@ -82,7 +81,7 @@ def exchange_google_code_for_profile(
             "code": code,
             "client_id": settings.GOOGLE_CLIENT_ID,
             "client_secret": settings.GOOGLE_CLIENT_SECRET,
-            "redirect_uri": build_google_callback_url(site_url),
+            "redirect_uri": build_google_callback_url(),
             "grant_type": "authorization_code",
         },
     )

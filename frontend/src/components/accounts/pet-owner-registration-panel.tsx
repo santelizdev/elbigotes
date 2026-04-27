@@ -59,7 +59,7 @@ function buildEmailError(email: string) {
   const domain = normalized.split("@")[1] ?? "";
 
   if (!ALLOWED_EMAIL_DOMAINS.has(domain)) {
-    return "Usa Gmail, Yahoo, Outlook, Hotmail o Proton. Si no tienes uno, puedes continuar con Google o Facebook.";
+    return "Usa Gmail, Yahoo, Outlook, Hotmail o Proton. Si no tienes uno, puedes continuar con Google.";
   }
 
   return null;
@@ -113,7 +113,6 @@ export function PetOwnerRegistrationPanel({
   const [breedQuery, setBreedQuery] = useState("");
   const [hasSpecialCondition, setHasSpecialCondition] = useState(false);
   const [hasSpecialDiet, setHasSpecialDiet] = useState(false);
-  const [isEmailVerified] = useState(false);
 
   const breedOptions = useMemo(() => PET_BREEDS_BY_TYPE[petType] ?? [], [petType]);
 
@@ -144,7 +143,6 @@ export function PetOwnerRegistrationPanel({
         special_condition_notes: String(formData.get("special_condition_notes") ?? ""),
         has_special_diet: formData.get("has_special_diet") === "on",
         special_diet_notes: String(formData.get("special_diet_notes") ?? ""),
-        isEmailVerified,
       },
       pet_profile: {
         name: String(formData.get("pet_name") ?? ""),
@@ -179,7 +177,7 @@ export function PetOwnerRegistrationPanel({
           : "Tu mascota";
 
       setSuccessMessage(
-        `Cuenta creada. Revisa tu correo para confirmar tu cuenta. ${petName} ya quedó asociado a tu perfil.`,
+        `Cuenta creada correctamente. ${petName} ya quedó asociado a tu perfil y ya puedes iniciar sesión.`,
       );
     } catch (submitError) {
       setError(
@@ -217,7 +215,7 @@ export function PetOwnerRegistrationPanel({
               Email
               <TooltipInfo
                 label="Información sobre correos permitidos"
-                content="Solo se permiten correos de proveedores confiables como: Gmail, Yahoo, Outlook, Proton. Si no tienes uno, puedes registrarte con Google o Facebook."
+                content="Solo se permiten correos de proveedores confiables como: Gmail, Yahoo, Outlook y Proton. Si no tienes uno, puedes registrarte con Google."
               />
             </span>
           }
@@ -294,11 +292,6 @@ export function PetOwnerRegistrationPanel({
           />
         </FormField>
       </FormGrid>
-
-      <InfoBox tone="muted" className="rounded-[1.2rem]">
-        La verificación por correo ya queda conectada vía Brevo cuando el servidor tenga
-        configurados <code>BREVO_API_KEY</code> y <code>BREVO_SENDER_EMAIL</code>.
-      </InfoBox>
 
       <FormGrid>
         <FormField label="Nombre mascota" htmlFor="pet_name" error={fieldErrors.pet_name}>

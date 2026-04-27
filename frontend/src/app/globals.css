@@ -202,6 +202,19 @@ button {
   width: 100%;
 }
 
+.site-header-business-cta {
+  border: 1px solid transparent;
+  background: linear-gradient(135deg, var(--accent-emerald), #106b78);
+  color: #fff;
+  box-shadow: 0 14px 28px rgba(7, 20, 25, 0.08);
+}
+
+:root[data-theme="dark"] .site-header-business-cta {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: #fff;
+  color: var(--accent-emerald);
+}
+
 .tag,
 .status-pill {
   display: inline-flex;

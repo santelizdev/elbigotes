@@ -18,6 +18,73 @@ const GEOLOCATION_PERMISSION_DENIED = 1;
 const GEOLOCATION_POSITION_UNAVAILABLE = 2;
 const GEOLOCATION_TIMEOUT = 3;
 
+function distanceKmBetween(lat1: number, lng1: number, lat2: number, lng2: number) {
+  const toRadians = (value: number) => (value * Math.PI) / 180;
+  const earthRadiusKm = 6371;
+  const deltaLat = toRadians(lat2 - lat1);
+  const deltaLng = toRadians(lng2 - lng1);
+  const a =
+    Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+    Math.cos(toRadians(lat1)) *
+      Math.cos(toRadians(lat2)) *
+      Math.sin(deltaLng / 2) *
+      Math.sin(deltaLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return earthRadiusKm * c;
+}
+
+function filterPlacesLocally(places: Place[], filters: PlaceFilters) {
+  const normalizedSearch = filters.search?.trim().toLowerCase();
+
+  return places.filter((place) => {
+    if (filters.category && place.category !== filters.category) {
+      return false;
+    }
+
+    if (filters.region && place.region.toLowerCase() !== filters.region.toLowerCase()) {
+      return false;
+    }
+
+    if (filters.commune && place.commune.toLowerCase() !== filters.commune.toLowerCase()) {
+      return false;
+    }
+
+    if (normalizedSearch) {
+      const haystack = `${place.name} ${place.summary} ${place.description ?? ""} ${place.formattedAddress}`.toLowerCase();
+      if (!haystack.includes(normalizedSearch)) {
+        return false;
+      }
+    }
+
+    if (filters.verifiedOnly && !place.isVerified) {
+      return false;
+    }
+
+    if (filters.isOpen247 && !place.isOpen247) {
+      return false;
+    }
+
+    if (filters.isEmergencyService && !place.isEmergencyService) {
+      return false;
+    }
+
+    if (
+      filters.lat !== undefined &&
+      filters.lng !== undefined &&
+      filters.radiusKm !== undefined &&
+      place.latitude !== null &&
+      place.longitude !== null
+    ) {
+      const distance = distanceKmBetween(filters.lat, filters.lng, place.latitude, place.longitude);
+      if (distance > filters.radiusKm) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+}
+
 function buildTerritoryOptions(values: string[]) {
   const counts = values.reduce<Map<string, number>>((map, value) => {
     const normalizedValue = value.trim();
@@ -111,6 +178,32 @@ export function usePlacesQuery({ initialPlaces, initialCategory }: UsePlacesQuer
   const deferredSearch = useDeferredValue(search);
   const lastTrackedSearchKeyRef = useRef<string>("");
 
+  function trackResolvedSearch(items: Place[], filters: PlaceFilters) {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const trackingPayload = {
+      category_slug: filters.category,
+      search_term: filters.search,
+      region: filters.region,
+      commune: filters.commune,
+      has_user_location: Boolean(userLocation),
+      user_latitude: userLocation?.lat,
+      user_longitude: userLocation?.lng,
+      radius_km: filters.radiusKm,
+      verified_only: filters.verifiedOnly,
+      result_count: items.length,
+      path: `${window.location.pathname}${window.location.search}`,
+    };
+    const trackingKey = JSON.stringify(trackingPayload);
+
+    if (lastTrackedSearchKeyRef.current !== trackingKey) {
+      lastTrackedSearchKeyRef.current = trackingKey;
+      void trackSearchEvent(trackingPayload);
+    }
+  }
+
   useEffect(() => {
     let active = true;
     const normalizedSearch = deferredSearch.trim();
@@ -125,9 +218,22 @@ export function usePlacesQuery({ initialPlaces, initialCategory }: UsePlacesQuer
       verifiedOnly: showOnlyVerified,
       isOpen247: showOnly247,
     };
+    const canResolveFromInitialPlaces = initialCategory
+      ? filters.category === initialCategory
+      : true;
 
     setLoading(true);
     setError(null);
+
+    if (canResolveFromInitialPlaces) {
+      const items = filterPlacesLocally(initialPlaces, filters);
+      setPlaces(items);
+      trackResolvedSearch(items, filters);
+      setLoading(false);
+      return () => {
+        active = false;
+      };
+    }
 
     getPlaces(filters)
       .then((items) => {
@@ -135,27 +241,7 @@ export function usePlacesQuery({ initialPlaces, initialCategory }: UsePlacesQuer
           return;
         }
         setPlaces(items);
-        if (typeof window !== "undefined") {
-          const trackingPayload = {
-            category_slug: filters.category,
-            search_term: filters.search,
-            region: filters.region,
-            commune: filters.commune,
-            has_user_location: Boolean(userLocation),
-            user_latitude: userLocation?.lat,
-            user_longitude: userLocation?.lng,
-            radius_km: filters.radiusKm,
-            verified_only: filters.verifiedOnly,
-            result_count: items.length,
-            path: `${window.location.pathname}${window.location.search}`,
-          };
-          const trackingKey = JSON.stringify(trackingPayload);
-
-          if (lastTrackedSearchKeyRef.current !== trackingKey) {
-            lastTrackedSearchKeyRef.current = trackingKey;
-            void trackSearchEvent(trackingPayload);
-          }
-        }
+        trackResolvedSearch(items, filters);
       })
       .catch((error: unknown) => {
         if (!active) {
@@ -209,6 +295,16 @@ export function usePlacesQuery({ initialPlaces, initialCategory }: UsePlacesQuer
       verifiedOnly: showOnlyVerified,
       isOpen247: showOnly247,
     };
+    const canResolveFromInitialPlaces = initialCategory
+      ? territoryFilters.category === initialCategory
+      : true;
+
+    if (canResolveFromInitialPlaces) {
+      setTerritoryPlaces(filterPlacesLocally(initialPlaces, territoryFilters));
+      return () => {
+        active = false;
+      };
+    }
 
     getPlaces(territoryFilters)
       .then((items) => {

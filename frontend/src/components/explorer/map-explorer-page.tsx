@@ -165,7 +165,7 @@ export function MapExplorerPage({
       </div>
 
       <SurfaceCard
-        className="flex flex-wrap items-center justify-between gap-4 rounded-[1.35rem] px-4 py-4 max-xl:order-[-1]"
+        className="hidden flex-wrap items-center justify-between gap-4 rounded-[1.35rem] px-4 py-4 md:flex max-xl:order-[-1]"
         aria-label="Contexto del mapa"
       >
         <div className="inline-flex items-center gap-2 rounded-full border border-app-border bg-[color-mix(in_srgb,var(--background-soft)_78%,var(--surface)_22%)] px-4 py-3 text-app-text">

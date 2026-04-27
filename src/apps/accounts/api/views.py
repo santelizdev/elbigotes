@@ -73,12 +73,9 @@ class GoogleOAuthStartView(APIView):
 
     def get(self, request, *args, **kwargs):
         next_path = request.query_params.get("next") or "/ingresar"
-        current_site_url = request.build_absolute_uri("/").rstrip("/")
 
         try:
-            return HttpResponseRedirect(
-                build_google_oauth_start_url(next_path=next_path, site_url=current_site_url)
-            )
+            return HttpResponseRedirect(build_google_oauth_start_url(next_path=next_path))
         except GoogleOAuthConfigurationError:
             params = urlencode({"error": "google_oauth_not_configured"})
             return HttpResponseRedirect(f"{settings.SITE_URL}/ingresar?{params}")
@@ -92,7 +89,6 @@ class GoogleOAuthCallbackView(APIView):
         code = request.query_params.get("code", "")
         state = request.query_params.get("state", "")
         oauth_error = request.query_params.get("error")
-        current_site_url = request.build_absolute_uri("/").rstrip("/")
 
         if oauth_error:
             params = urlencode({"error": oauth_error})
@@ -106,7 +102,6 @@ class GoogleOAuthCallbackView(APIView):
             state_payload, profile = exchange_google_code_for_profile(
                 code=code,
                 state_token=state,
-                site_url=current_site_url,
             )
             user = get_or_create_user_from_google_profile(profile)
             token = create_access_token(user)

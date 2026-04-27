@@ -13,7 +13,7 @@ export function PetOwnerRegistrationForm() {
       <PageHero
         eyebrow="Registro de tutor"
         title="Alta de tutor y mascota"
-        description="Este flujo deja lista la cuenta base del usuario, el perfil del tutor y la primera mascota, con espacio para sumar validación por correo y login social más adelante."
+        description="Este flujo deja lista la cuenta base del usuario, el perfil del tutor y la primera mascota, con espacio para sumar mejoras sin complicar el alta inicial."
         className="p-6"
         actions={
           <Button href="/ingresar" variant="ghost">
@@ -50,8 +50,8 @@ export function PetOwnerRegistrationForm() {
             <SurfaceCard className="grid gap-3">
               <h3 className="m-0 font-display-ui text-2xl leading-tight">Qué queda preparado</h3>
               <p className="m-0 leading-7 text-app-text-soft">
-                OAuth con Google y Facebook, verificación por email con Brevo y expansión a
-                múltiples mascotas por tutor sin cambiar el contrato visual del formulario.
+                Acceso con Google y expansión a múltiples mascotas por tutor sin cambiar el
+                contrato visual del formulario.
               </p>
             </SurfaceCard>
           </>
