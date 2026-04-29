@@ -34,6 +34,7 @@ from apps.ingestion.models import ImportedPlaceRecord, ImportRecordStatus
 from apps.places.choices import PlaceStatus
 from apps.places.models import ContactPoint, Place
 from apps.places.services.hours import normalize_google_opening_hours
+from apps.places.services.location_normalization import detect_commune_for_imported_record
 from apps.taxonomy.models import Category, Subcategory
 
 # ---------------------------------------------------------------------------
@@ -585,17 +586,24 @@ def build_place_from_record(
     address_comps = google.get("address_components", [])
     formatted     = google.get("formatted_address", record.raw_address)
     parsed_commune, parsed_region = parse_location_from_address(formatted)
-    commune       = (
-        extract_address_component(address_comps, "locality")
-        or extract_address_component(address_comps, "administrative_area_level_3")
-        or parsed_commune
-        or meta.get("commune_target", "")
-    )
-    region = normalize_region_name(
-        extract_address_component(address_comps, "administrative_area_level_1")
-        or parsed_region
-        or meta.get("region_target", "")
-    )
+    
+    detection = detect_commune_for_imported_record(record)
+
+    if detection["commune"] and detection["confidence"] == "high":
+        commune = detection["commune"]
+        region = detection["region"] or normalize_region_name(meta.get("region_target", ""))
+    else:
+        commune       = (
+            extract_address_component(address_comps, "locality")
+            or extract_address_component(address_comps, "administrative_area_level_3")
+            or parsed_commune
+            or meta.get("commune_target", "")
+        )
+        region = normalize_region_name(
+            extract_address_component(address_comps, "administrative_area_level_1")
+            or parsed_region
+            or meta.get("region_target", "")
+        )
 
     has_google_opening_hours = bool(opening_hours_raw)
     is_open_24_7 = has_google_opening_hours and detected_open_24_7
@@ -644,6 +652,11 @@ def build_place_from_record(
             "google_open_now": opening_hours_raw.get("open_now"),
             "detected_open_24_7": detected_open_24_7,
             "requires_hours_enrichment": requires_hours_enrichment,
+            "commune_target":     meta.get("commune_target"),
+            "commune_detected":   detection["commune"],
+            "commune_source":     detection["source"],
+            "commune_confidence": detection["confidence"],
+            "needs_location_review": detection["needs_review"],
         },
     )
 

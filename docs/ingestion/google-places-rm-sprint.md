@@ -89,3 +89,22 @@ Una vez que el archivo esté en tu servidor VPS de producción, simplemente imp�
 ```bash
 docker compose exec web python /app/src/manage.py loaddata /app/tmp/rm-santiago-tiendas-v1.json
 ```
+
+## Normalización territorial
+
+Las APIs de Google (como Nearby Search) asocian el descubrimiento de un lugar con la comuna "centroide" desde la que se lanzó la búsqueda (ej. Santiago), sin importar si el lugar está físicamente en la frontera o en una comuna vecina (ej. Ñuñoa).
+
+Para corregir este problema legado y evitar mostrar en la UI de "Santiago" locales de otras áreas, usa los comandos de normalización. Estos comandos usan un sistema de detección conservador que extrae la comuna del `formatted_address` y componentes de Google.
+
+### Normalizar en Producción (`Place`)
+Si ya tienes datos en tu sistema, usa:
+```bash
+docker compose exec web python /app/src/manage.py normalize_place_communes --dry-run
+# Si todo se ve correcto, quita --dry-run
+```
+
+### Normalizar en Staging (`ImportedPlaceRecord`)
+Antes de promover un lote que viene sucio:
+```bash
+docker compose exec web python /app/src/manage.py normalize_imported_record_communes --dataset <dataset-slug> --dry-run
+```

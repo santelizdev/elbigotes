@@ -134,17 +134,24 @@ export function buildPlaceCategoryDefinition(
 }
 
 export function buildPlaceCategoryDefinitions(categories?: PublicCategory[]): CategoryDefinition[] {
-  const source = categories?.length
-    ? [...categories].sort((left, right) => {
-        const priorityDelta = getCategoryPriority(left.slug) - getCategoryPriority(right.slug);
-        if (priorityDelta !== 0) {
-          return priorityDelta;
-        }
-        const leftOrder = left.sortOrder ?? Number.MAX_SAFE_INTEGER;
-        const rightOrder = right.sortOrder ?? Number.MAX_SAFE_INTEGER;
-        return leftOrder - rightOrder || left.name.localeCompare(right.name, "es");
-      })
+  let source = categories?.length
+    ? [...categories]
     : FALLBACK_PLACE_CATEGORIES;
+
+  source = source.filter((category) =>
+    CATEGORY_PRIORITY_ORDER.includes(category.slug as any),
+  );
+
+  source.sort((left, right) => {
+    const priorityDelta = getCategoryPriority(left.slug) - getCategoryPriority(right.slug);
+    if (priorityDelta !== 0) {
+      return priorityDelta;
+    }
+    const leftOrder = left.sortOrder ?? Number.MAX_SAFE_INTEGER;
+    const rightOrder = right.sortOrder ?? Number.MAX_SAFE_INTEGER;
+    return leftOrder - rightOrder || left.name.localeCompare(right.name, "es");
+  });
+
   return source.map((category, index) => buildPlaceCategoryDefinition(category, index));
 }
 
