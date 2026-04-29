@@ -137,9 +137,11 @@ CATEGORY_QUERIES: dict[str, list[str]] = {
         "fundación animales",
     ],
     "peluqueria-canina": [
-        "peluquería canina",
-        "grooming mascotas",
-        "baño y corte perros",
+        "peluqueria canina perros",
+        "grooming perros",
+        "peluqueria mascotas perros",
+        "baño corte perros grooming",
+        "dog grooming santiago",
     ],
     "guarderia": [
         "guardería de perros",
@@ -155,6 +157,13 @@ CATEGORY_QUERIES: dict[str, list[str]] = {
         "parque canino",
         "dog park",
         "parque pet friendly",
+    ],
+    "tiendas": [
+        "pet shop",
+        "tienda de mascotas",
+        "tienda productos mascotas",
+        "alimentos para mascotas",
+        "accesorios para mascotas",
     ],
 }
 
@@ -416,7 +425,7 @@ def run_ingestion(
     client = PlacesClient(api_key=api_key, max_requests=max_requests)
     source, dataset = get_or_create_source_and_dataset(dataset_slug)
 
-    stats = {"created": 0, "updated": 0, "skipped": 0, "errors": 0}
+    stats = {"created": 0, "updated": 0, "skipped": 0, "errors": 0, "with_hours": 0, "without_hours": 0}
     seen_place_ids: set[str] = set()
     processed_records = 0
     stopped_early = False
@@ -424,11 +433,12 @@ def run_ingestion(
 
     total_combinations = len(regions) * sum(len(q) for q in [CATEGORY_QUERIES[c] for c in categories if c in CATEGORY_QUERIES])
     log.info(
-        "Iniciando ingesta: %d regiones × %d queries = ~%d búsquedas%s",
+        "Iniciando ingesta: %d regiones × %d queries = ~%d búsquedas%s | Fetch Details: %s",
         len(regions),
         sum(len(CATEGORY_QUERIES[c]) for c in categories if c in CATEGORY_QUERIES),
         total_combinations,
         " [DRY RUN]" if dry_run else "",
+        "SÍ (Alto costo)" if fetch_details else "NO (Discovery barato)",
     )
 
     for region_data in regions:
@@ -470,6 +480,11 @@ def run_ingestion(
                                 "address_components": [],
                             }
 
+                        if details.get("opening_hours"):
+                            stats["with_hours"] += 1
+                        else:
+                            stats["without_hours"] += 1
+
                         normalized = normalize_record(
                             details,
                             commune,
@@ -507,6 +522,8 @@ def run_ingestion(
     log.info("  Actualizados:%d", stats["updated"])
     log.info("  Saltados:    %d", stats["skipped"])
     log.info("  Errores:     %d", stats["errors"])
+    log.info("  Con horarios: %d", stats["with_hours"])
+    log.info("  Sin horarios: %d", stats["without_hours"])
     log.info("  Procesados:  %d", processed_records)
     log.info("  API calls:   %d", client.requests_made)
     if stopped_early:

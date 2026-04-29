@@ -48,3 +48,4 @@ src/celerybeat-schedule*
 Thumbs.db
 .dockerignore
 !frontend/.dockerignore
+src/celerybeat-schedule*

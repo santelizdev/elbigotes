@@ -47,16 +47,18 @@ CATEGORY_MAP: dict[str, str] = {
     "guarderia":         "guarderias",
     "emergencia-veterinaria": "emergencias-veterinarias",
     "parque": "parques-pet-friendly",
+    "tiendas": "tiendas-de-alimentos",
 }
 
 # Mapeo opcional a subcategoría por defecto según categoría
 SUBCATEGORY_MAP: dict[str, str] = {
     "veterinaria":       "consulta",
     "refugio":           "refugios",
-    "peluqueria-canina": None,
+    "peluqueria-canina": "grooming",
     "guarderia":         "guarderia-diurna",
     "emergencia-veterinaria": "urgencias",
     "parque": None,
+    "tiendas": "pet-shop",
 }
 
 CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
@@ -124,6 +126,14 @@ CATEGORY_KEYWORDS: dict[str, tuple[str, ...]] = {
         "dog park",
         "pet friendly",
         "zona canina",
+    ),
+    "tiendas": (
+        "pet shop",
+        "tienda de mascotas",
+        "mascotas",
+        "alimentos para mascotas",
+        "accesorios para mascotas",
+        "pet store",
     ),
 }
 
@@ -194,6 +204,23 @@ NEGATIVE_KEYWORDS: dict[str, tuple[str, ...]] = {
         "peluquería",
         "grooming",
         "hotel de mascotas",
+    ),
+    "tiendas": (
+        "veterinaria",
+        "veterinario",
+        "clinica",
+        "clínica",
+        "hospital",
+        "refugio",
+        "rescate",
+        "guarderia",
+        "guardería",
+        "peluqueria",
+        "peluquería",
+        "grooming",
+        "hotel de mascotas",
+        "parque",
+        "plaza",
     ),
 }
 
@@ -391,6 +418,10 @@ def is_record_relevant(record: ImportedPlaceRecord) -> tuple[bool, str]:
     category_slug = meta.get("category_slug", "")
     name_haystack = _normalize_text(record.raw_name)
     address_haystack = _normalize_text(record.raw_address)
+    search_keyword_haystack = _normalize_text(meta.get("search_keyword", ""))
+    opening_hours = google.get("opening_hours", {})
+    weekday_text_haystack = _normalize_text(" ".join(opening_hours.get("weekday_text", [])))
+    
     haystack = " ".join(
         filter(
             None,
@@ -438,15 +469,31 @@ def is_record_relevant(record: ImportedPlaceRecord) -> tuple[bool, str]:
             for token in (
                 "urgencia",
                 "emergencia",
+                "24",
                 "24 horas",
-                "24hrs",
-                "24hr",
+                "24-7",
                 "24 7",
                 "24/7",
             )
+        ) or any(
+            token in search_keyword_haystack
+            for token in (
+                "urgencia",
+                "emergencia",
+                "24",
+            )
+        ) or any(
+            token in weekday_text_haystack
+            for token in (
+                "24 horas",
+                "abierto 24 horas",
+            )
         )
-        if not (has_veterinary_signal and has_emergency_signal):
-            return False, f"Resultado poco confiable para categoría '{category_slug}'"
+        if not has_veterinary_signal:
+            return False, f"Resultado sin señal veterinaria para categoría '{category_slug}'"
+        if not has_emergency_signal:
+            return False, f"Resultado sin señal de emergencia/24h para categoría '{category_slug}'"
+            
         negative_keywords = NEGATIVE_KEYWORDS.get(category_slug, ())
         if any(_normalize_text(keyword) in haystack for keyword in negative_keywords):
             return False, f"Coincidencia ambigua para categoría '{category_slug}'"
@@ -464,7 +511,7 @@ def is_record_relevant(record: ImportedPlaceRecord) -> tuple[bool, str]:
             return False, f"Coincidencia ambigua para categoría '{category_slug}'"
         return True, ""
 
-    if category_slug in {"peluqueria-canina", "guarderia", "emergencia-veterinaria", "parque"}:
+    if category_slug in {"peluqueria-canina", "guarderia", "emergencia-veterinaria", "parque", "tiendas"}:
         if not has_keyword_match:
             return False, f"Resultado poco confiable para categoría '{category_slug}'"
         negative_keywords = NEGATIVE_KEYWORDS.get(category_slug, ())
@@ -550,6 +597,15 @@ def build_place_from_record(
         or meta.get("region_target", "")
     )
 
+    has_google_opening_hours = bool(opening_hours_raw)
+    is_open_24_7 = has_google_opening_hours and detected_open_24_7
+
+    requires_hours_enrichment = False
+    review_status = "pending"
+    if category_slug_raw == "emergencia-veterinaria" and not has_google_opening_hours:
+        requires_hours_enrichment = True
+        review_status = "needs_hours_review"
+
     # --- Place ---
     place = Place(
         name             = record.raw_name[:200],
@@ -567,9 +623,7 @@ def build_place_from_record(
         is_verified      = False,
         is_featured      = False,
         is_emergency_service = category_slug_raw == "emergencia-veterinaria",
-        # Si el horario normalizado realmente luce como 24/7, lo marcamos.
-        # Mantenemos además el caso especial de emergencia veterinaria como fallback.
-        is_open_24_7     = detected_open_24_7 or category_slug_raw == "emergencia-veterinaria",
+        is_open_24_7     = is_open_24_7,
         opening_hours_raw = opening_hours_raw,
         opening_hours_normalized = opening_hours_normalized,
         timezone_name    = "America/Santiago",
@@ -585,9 +639,11 @@ def build_place_from_record(
             "imported_from":      record.dataset.slug,
             "import_category_slug": category_slug_raw,
             "import_search_keyword": meta.get("search_keyword", ""),
-            "review_status": "pending",
-            "google_opening_hours_present": bool(opening_hours_raw),
+            "review_status": review_status,
+            "google_opening_hours_present": has_google_opening_hours,
             "google_open_now": opening_hours_raw.get("open_now"),
+            "detected_open_24_7": detected_open_24_7,
+            "requires_hours_enrichment": requires_hours_enrichment,
         },
     )
 
