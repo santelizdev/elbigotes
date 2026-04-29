@@ -152,7 +152,7 @@ def detect_commune_from_address(address: str, expected_region: str = "") -> tupl
     if not tokens:
         return "", ""
 
-    commune = ""
+    communes_found = []
     region = ""
 
     for token in tokens:
@@ -166,10 +166,16 @@ def detect_commune_from_address(address: str, expected_region: str = "") -> tupl
             continue
 
         canonical_commune = normalize_commune_name(token, expected_region)
-        if canonical_commune and not commune:
-            commune = canonical_commune
+        if canonical_commune and canonical_commune not in communes_found:
+            communes_found.append(canonical_commune)
 
-    return commune, region
+    if not communes_found:
+        return "", region
+
+    if len(communes_found) > 1 and "Santiago" in communes_found:
+        communes_found.remove("Santiago")
+
+    return communes_found[0], region
 
 
 def detect_commune_for_imported_record(record) -> dict:

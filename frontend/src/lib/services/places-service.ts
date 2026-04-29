@@ -44,6 +44,22 @@ interface PlaceApiResponse {
   source?: string | null;
 }
 
+export function normalizeRegion(region: string): string {
+  if (!region) return "";
+  const lower = region.trim().toLowerCase();
+  if (
+    lower === "santiago metropolitan region" ||
+    lower === "santiago, región metropolitana" ||
+    lower === "región metropolitana de santiago" ||
+    lower === "region metropolitana" ||
+    lower === "metropolitana" ||
+    lower === "rm"
+  ) {
+    return "Región Metropolitana";
+  }
+  return region.trim();
+}
+
 function mapPlace(payload: PlaceApiResponse): Place {
   const googleRatingValue =
     payload.google_rating === null || payload.google_rating === undefined
@@ -59,7 +75,7 @@ function mapPlace(payload: PlaceApiResponse): Place {
     subcategory: payload.subcategory,
     formattedAddress: payload.formatted_address,
     commune: payload.commune,
-    region: payload.region,
+    region: normalizeRegion(payload.region),
     country: payload.country,
     isVerified: payload.is_verified,
     verificationStatus: payload.verification_status ?? (payload.is_verified ? "verified" : "unverified"),
